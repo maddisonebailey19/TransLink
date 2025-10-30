@@ -1,0 +1,38 @@
+﻿@page "/incidentmap"
+@using PrideLink.Client.Internal_Models;
+@using System.Text.Json;
+<h3>HeatMap</h3>
+@inject IJSRuntime JS
+<div id="map" style="width: 100%; height: 500px;"></div>
+@code {
+    private List<HeatmapPoint> heatmapData;
+
+    protected override void OnInitialized()
+    {
+        heatmapData = new List<HeatmapPoint>
+        {
+            new HeatmapPoint { Longitude = -1.2965, Latitude = 52.6282, Intensity = 0.7, Description = "Test1" }, // City center
+            new HeatmapPoint { Longitude = -1.2950, Latitude = 52.6315, Intensity = 1.0, Description = "Test2" }, // Near Norwich Cathedral
+            new HeatmapPoint { Longitude = -1.3060, Latitude = 52.6282, Intensity = 0.8, Description = "Test3" }, // Near the University of East Anglia
+            new HeatmapPoint { Longitude = -1.2955, Latitude = 52.6290, Intensity = 0.6, Description = "Test4" }, // Near Norwich Market
+            new HeatmapPoint { Longitude = -1.2975, Latitude = 52.6350, Intensity = 0.5, Description = "Test5" }, // Near Eaton Park
+            new HeatmapPoint { Longitude = -1.2972, Latitude = 52.6243, Intensity = 0.4, Description = "Test6" }, // Near Mousehold Heath
+            new HeatmapPoint { Longitude = -1.2941, Latitude = 52.6321, Intensity = 0.3, Description = "Test7" }, // Near Chapelfield Gardens
+            new HeatmapPoint { Longitude = -1.2954, Latitude = 52.6314, Intensity = 0.9, Description = "Test8" }, // Near The Forum
+            new HeatmapPoint { Longitude = -1.3032, Latitude = 52.6315, Intensity = 0.5, Description = "Test9" }, // Near Whittlingham Country Park
+            new HeatmapPoint { Longitude = -1.3055, Latitude = 52.6222, Intensity = 0.2, Description = "Test10" }, // Near Earlham Cemetery
+            new HeatmapPoint { Longitude = -1.2958, Latitude = 52.6340, Intensity = 0.8, Description = "Test11" }, // Near Norwich Train Station
+            new HeatmapPoint { Longitude = -1.2963, Latitude = 52.6285, Intensity = 0.6, Description = "Test12" }, // Near the Arts Centre
+            new HeatmapPoint { Longitude = -1.2905, Latitude = 52.6300, Intensity = 0.4, Description = "Test13" }  // Near St. Stephen's Street
+        };
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var jsonData = JsonSerializer.Serialize(heatmapData);
+            await JS.InvokeVoidAsync("initializeMap", jsonData);
+        }
+    }
+}

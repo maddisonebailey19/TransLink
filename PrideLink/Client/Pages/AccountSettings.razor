@@ -1,0 +1,705 @@
+﻿@page "/AccountSettings"
+@using PrideLink.Client.Helpers;
+@using PrideLink.Shared.General;
+@using PrideLink.Shared.LoginDetails;
+@using PrideLink.Shared.UserInfo;
+@using System.Net.Http.Headers;
+@using PrideLink.Client.Internal_Models;
+<h3>Account Settings</h3>
+
+@inject IJSRuntime JS
+@inject HttpClient _Http
+@inject NavigationManager _Navigation
+@inject jwtHelper _jwtHelper
+
+<style>
+    .profile-pic-box {
+    width: 100%; /* The box takes the full width of its parent */
+    padding-top: 100%; /* Makes the height exactly equal to the width (100% height of its own width) */
+    border: 2px dashed #cccccc;
+    position: relative;
+    cursor: pointer;
+    overflow: hidden; /* Hides any part of the image that overflows the box */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.plus-icon {
+    font-size: 3rem;
+    color: #cccccc;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.hidden {
+    display: none;
+}
+
+.textarea-boarder-color{
+    border-block-color: red;
+    border-left-color: red;
+    border-right-color: red;
+}
+
+.profile-pic-box img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Ensures the image fills the box while maintaining its aspect ratio */
+}
+
+    .traffic-light {
+        display: flex;
+        flex-direction: column;
+        width: 120px;
+        margin: 0 auto;
+        text-align: center;
+    }
+
+    .light {
+        padding: 10px;
+        margin: 5px;
+        border-radius: 50%;
+        width: 80px;
+        height: 80px;
+        line-height: 80px;
+        font-size: 14px;
+        cursor: pointer;
+        color: white;
+        opacity: 0.5;
+    }
+
+    .red-light {
+        background-color: red;
+    }
+
+    .orange-light {
+        background-color: orange;
+    }
+
+    .green-light {
+        background-color: green;
+    }
+
+    .active {
+        opacity: 1;
+        font-weight: bold;
+    }
+
+
+
+</style>
+@if (isLoading)
+{
+    <LoadingView Percentage="loadingPercentage" LoadingText="Loading, please wait..." />
+}
+else
+{
+    <div class="accordion" id="accordionExample">
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="PrivacyAndData">
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePrivacyAndData" aria-expanded="true" aria-controls="collapsePrivacyAndData">
+                    Privacy & Data
+                </button>
+            </h2>
+            <div id="collapsePrivacyAndData" class="accordion-collapse collapse show" aria-labelledby="PrivacyAndData" data-bs-parent="#accordionExample">
+                <div class="accordion-body">
+                    <h3>
+                        Why do we store Data:
+                    </h3>
+                    <p>
+                        On this platform we store some of your personal data.
+                        We do not share or sell your data we only store what is needed for the apps core features. Additonal features you can opt in and out of.
+                        We store some general info about you to go on your profile which is provided by you.
+                        We store your location but only the city your in to allow the app to show you other people in the area.
+                        We store your email for emergency alert system this is a additional feature and is not manditory.
+                    </p>
+                    <h3>
+                        What Data do we store:
+                    </h3>
+                    <p>
+                        <h4>
+                            Core features:
+                        </h4>
+                        Bio<br />
+                        Display Name<br />
+                        Age<br />
+                        Relationship Status (Can set to prefer not to say)<br />
+                        Location<br />
+                        Socials<br />
+                        <h4>
+                            Additional features:
+                        </h4>
+                        Email<br />
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="ProfileBio">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseProfileBio" aria-expanded="false" aria-controls="collapseProfileBio">
+                    Profile Bio
+                </button>
+            </h2>
+            <div id="collapseProfileBio" class="accordion-collapse collapse" aria-labelledby="ProfileBio" data-bs-parent="#accordionExample">
+                <div class="accordion-body">
+                    <div>
+                        <label for="exampleTextarea" class="form-label mt-4">Write a bit about your self</label>
+                        <textarea class="form-control" id="exampleTextarea" rows="3" value="@bio" @oninput="BioChanged" style=""></textarea>
+                        <label class="form-label mt-4">Max characters: @currentBioCharacters / 250 </label>
+                        <div>
+                            <label for="userName" class="form-label mt-4">Display Name</label>
+                            <input type="text" class="form-control" id="userName" aria-describedby="Your display name" placeholder="Enter name" @bind="UserName">
+                            <small id="userName" class="form-text text-muted">This will be shown on your profile</small>
+                        </div>
+                        <div>
+                            <label for="age" class="form-label mt-4">Age</label>
+                            <input type="number" class="form-control" id="age" aria-describedby="Your age" placeholder="Enter age" @bind="userAge">
+                            <small id="ageHelp" class="form-text text-muted">This will be shown on your profile</small>
+                        </div>
+                        <div>
+                            <label for="relationshipStatus" class="form-label mt-4">Relationship status</label>
+                            <select class="form-select" id="relationshipStatus" @bind="relationshipsStatusNo">
+                                @foreach (UserRelationshipStatusData relationshipStatus in userRelationshipStatuses)
+                                {
+                                    <option value="@relationshipStatus.relationshipStatusNo">@relationshipStatus.relationshipStatus</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="accordion" id="accordionExample">
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="ProfilePics">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseProfilePics" aria-expanded="false" aria-controls="collapseProfilePics">
+                        Profile Pics
+                    </button>
+                </h2>
+                <div id="collapseProfilePics" class="accordion-collapse collapse" aria-labelledby="ProfilePics" data-bs-parent="#accordionExample">
+                    <div class="accordion-body">
+                        <div class="row">
+                            <!-- Picture 1 -->
+                            <div class="col-4">
+                                <div class="profile-pic-box">
+                                    <label for="picUpload1">
+                                        <span class="plus-icon">+</span>
+                                        <img id="picPreview1" src="@pictureOne" alt="" class="img-fluid @(string.IsNullOrEmpty(pictureOne) ? "hidden" : "")">
+                                    </label>
+                                    <InputFile id="picUpload1" OnChange="async (e) => await ConvertToBase64(1, e)" class="d-none" />
+                                </div>
+                            </div>
+                            <!-- Picture 2 -->
+                            <div class="col-4">
+                                <div class="profile-pic-box">
+                                    <label for="picUpload2">
+                                        <span class="plus-icon">+</span>
+                                        <img id="picPreview2" src="@pictureTwo" alt="" class="img-fluid @(string.IsNullOrEmpty(pictureTwo) ? "hidden" : "")">
+                                    </label>
+                                    <InputFile id="picUpload2" OnChange="async (e) => await ConvertToBase64(2, e)" class="d-none" />
+                                </div>
+                            </div>
+                            <!-- Picture 3 -->
+                            <div class="col-4">
+                                <div class="profile-pic-box">
+                                    <label for="picUpload3">
+                                        <span class="plus-icon">+</span>
+                                        <img id="picPreview3" src="@pictureThree" alt="" class="img-fluid @(string.IsNullOrEmpty(pictureThree) ? "hidden" : "")">
+                                    </label>
+                                    <InputFile id="picUpload3" OnChange="async (e) => await ConvertToBase64(3, e)" class="d-none" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="ProfileInterests">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseProfileInterests" aria-expanded="false" aria-controls="collapseProfileInterests">
+                    Profile Interests
+                </button>
+            </h2>
+            <div id="collapseProfileInterests" class="accordion-collapse collapse" aria-labelledby="ProfileInterests" data-bs-parent="#accordionExample">
+                <div class="accordion-body">
+                    @foreach (Hobbies hobby in hobbys)
+                    {
+                        <button name="@hobby.HobbyNo" type="button"
+                                class="btn @(hobby.HobbySelected ? "btn-success" : "btn-primary") rounded-pill"
+                                style="margin-right: 10px; margin-top: 10px"
+                        @onclick="() => AddHobbyToUser(hobby.HobbyNo)">
+                            @hobby.HobbyName
+                        </button>
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="SocialLinks">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSocialLinks" aria-expanded="false" aria-controls="collapseSocialLinks">
+                    Social Links
+                </button>
+            </h2>
+            <div id="collapseSocialLinks" class="accordion-collapse collapse" aria-labelledby="SocialLinks" data-bs-parent="#accordionExample">
+                <div class="accordion-body">
+                    <div>
+                        <label for="instergram" class="form-label mt-4">Instergram</label>
+                        <input type="text" class="form-control" id="instergram" placeholder="Instergram" @bind="instergramSocial">
+
+                        <label for="snapchat" class="form-label mt-4">Snapchat</label>
+                        <input type="text" class="form-control" id="snapchat" placeholder="Snapchat" @bind="snapchatSocial">
+
+                        <label for="whatsapp" class="form-label mt-4">WhatsApp</label>
+                        <input type="text" class="form-control" id="whatsapp" placeholder="WhatsApp" @bind="whatsappSocial">
+
+                        <label for="discord" class="form-label mt-4">Discord</label>
+                        <input type="text" class="form-control" id="discord" placeholder="Discord" @bind="discordSocial">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="d-flex justify-content-end ">
+        <button type="button" class="btn btn-secondary" style="margin-right: 10px; margin-top: 10px" @onclick="Close">Close</button>
+        <button type="button" class="btn btn-primary" style="margin-top: 10px" @onclick="Save">Save</button>
+    </div>
+}
+
+
+@code {
+    private bool isLoading = true;
+    private double loadingPercentage = 0;
+
+    private string pictureOne;
+    private string pictureTwo;
+    private string pictureThree;
+    private int currentBioCharacters;
+    private bool disableBioEntry = false;
+    private string bio;
+    private jwtToken token;
+    private string relationshipStatus = "not dating";
+    private int relationshipsStatusNo = -1;
+    private List<UserRelationshipStatusData> userRelationshipStatuses = new List<UserRelationshipStatusData>();
+    private string? UserName = null;
+    private int? userAge = null;
+    private string? textAreaBoarderColor = null;
+    private string? instergramSocial = null;
+    private string? snapchatSocial = null;
+    private string? whatsappSocial = null;
+    private string? discordSocial = null;
+    List<Hobbies> hobbys = new List<Hobbies>();
+    List<Hobbys> selectedHobbys = new List<Hobbys>();
+
+    private void AddHobbyToUser(int hobbyNo)
+    {
+        int indexNo = hobbys.FindIndex(e => e.HobbyNo == hobbyNo);
+        hobbys[indexNo].HobbySelected = !hobbys[indexNo].HobbySelected;
+        if (hobbys[indexNo].HobbySelected == true)
+        {
+            Hobbys selectedHobby = new Hobbys();
+            selectedHobby.HobbyNo = hobbyNo;
+            selectedHobbys.Add(selectedHobby);
+        }
+        else
+        {
+            Hobbys selectedHobbyRemovalItem = selectedHobbys.FirstOrDefault(e => e.HobbyNo == hobbys[indexNo].HobbyNo);
+            selectedHobbys.Remove(selectedHobbyRemovalItem);
+        }
+
+    }
+
+    private void ChangeStatus(string status)
+    {
+        relationshipStatus = status;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        token = await _jwtHelper.GetJWTToken();
+        loadingPercentage += 10;
+        StateHasChanged();
+
+        await LoadRelastionshipStatuses();
+        loadingPercentage += 10;
+        StateHasChanged();
+
+        await LoadUserAge();
+        loadingPercentage += 10;
+        StateHasChanged();
+
+        await LoadUserDescription();
+        loadingPercentage += 10;
+        StateHasChanged();
+
+        await LoadHobbies();
+        loadingPercentage += 10;
+        StateHasChanged();
+
+        await LoadUserName();
+        loadingPercentage += 10;
+        StateHasChanged();
+
+        await LoadUserSocials();
+        loadingPercentage += 10;
+        StateHasChanged();
+        // Simulate fetching from the database
+        pictureOne = await LoadImageFromDatabaseAsync(1);  // Replace with your actual loading logic
+        loadingPercentage += 10;
+        StateHasChanged();
+
+        pictureTwo = await LoadImageFromDatabaseAsync(2);  // Replace with your actual loading logic
+        loadingPercentage += 10;
+        StateHasChanged();
+
+        pictureThree = await LoadImageFromDatabaseAsync(3);  // Replace with your actual loading logic
+        loadingPercentage += 10;
+        isLoading = false;
+        StateHasChanged();
+        
+    }
+
+    private async Task LoadHobbies()
+    {
+
+        _Http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.token);
+        var response = await _Http.GetAsync("api/General/GetHobbies");
+        if (response.IsSuccessStatusCode)
+        {
+            List<Hobbys> allHobbyes = await response.Content.ReadFromJsonAsync<List<Hobbys>>();
+            _Http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.token);
+            response = await _Http.GetAsync("api/UserHobby/GetUserHobbies");
+            if (response.IsSuccessStatusCode)
+            {
+                List<Hobbys> userSeletedHobbys = await response.Content.ReadFromJsonAsync<List<Hobbys>>();
+                foreach (Hobbys hobby in allHobbyes)
+                {
+                    bool hobbyExists = false;
+                    if (userSeletedHobbys.Exists(e => e.HobbyNo == hobby.HobbyNo))
+                    {
+                        hobbyExists = true;
+                        Hobbys selectedHobby = new Hobbys();
+                        selectedHobby.HobbyNo = hobby.HobbyNo;
+                        selectedHobby.HobbyName = hobby.HobbyName;
+                        selectedHobbys.Add(selectedHobby);
+                    }
+                    Hobbies newHobbies = new Hobbies();
+                    newHobbies.HobbyNo = hobby.HobbyNo;
+                    newHobbies.HobbyName = hobby.HobbyName;
+                    newHobbies.HobbySelected = hobbyExists;   //TODO change to show when user has already selected and saved them
+                    hobbys.Add(newHobbies);
+                }
+            }
+            else if(response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                foreach (Hobbys hobbyType in allHobbyes)
+                {
+                    Hobbies newHobbies = new Hobbies();
+                    newHobbies.HobbyNo = hobbyType.HobbyNo;
+                    newHobbies.HobbyName = hobbyType.HobbyName;
+                    newHobbies.HobbySelected = false;   //TODO change to show when user has already selected and saved them
+                    hobbys.Add(newHobbies);
+                }
+            }
+
+
+        }
+
+
+        StateHasChanged();
+
+    }
+
+    private async Task LoadRelastionshipStatuses()
+    {
+        _Http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.token);
+        var response = await _Http.GetAsync("api/UserRelationshipStatus/GetRelationshipStatuses");
+        if (response.IsSuccessStatusCode)
+        {
+            userRelationshipStatuses = await response.Content.ReadFromJsonAsync<List<UserRelationshipStatusData>>();
+        }
+        _Http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.token);
+        response = await _Http.GetAsync("api/UserRelationshipStatus/GetUserRelationshipStatus");
+        if (response.IsSuccessStatusCode)
+        {
+            UserRelationshipStatusData userRelationshipStatus = await response.Content.ReadFromJsonAsync<UserRelationshipStatusData>();
+            int indexNo = userRelationshipStatuses.FindIndex(e => e.relationshipStatusNo == userRelationshipStatus.relationshipStatusNo);
+            if(indexNo == -1)
+            {
+                relationshipsStatusNo = 1;
+            }
+            else
+            {
+                relationshipsStatusNo = indexNo+1;
+            }
+            
+        }
+        StateHasChanged();
+    }
+
+    private async Task LoadUserAge()
+    {
+        _Http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.token);
+        var response = await _Http.GetAsync("api/UserAge/GetUserAge");
+        if (response.IsSuccessStatusCode)
+        {
+            Age result = await response.Content.ReadFromJsonAsync<Age>();
+            userAge = result.AgeValue;
+        }
+        StateHasChanged();
+    }
+
+    private async Task LoadUserDescription()
+    {
+        _Http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.token);
+        var response = await _Http.GetAsync("api/UserBioDescription/GetUserBioDescription");
+        if (response.IsSuccessStatusCode)
+        {
+            UserBioDescriptionData result = await response.Content.ReadFromJsonAsync<UserBioDescriptionData>();
+            bio = result.bioText;
+            currentBioCharacters = bio.Length;
+        }
+        StateHasChanged();
+    }
+
+    private async Task LoadUserName()
+    {
+        _Http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.token);
+        var response = await _Http.GetAsync("api/userName/GetUserName");
+        if (response.IsSuccessStatusCode)
+        {
+            DisplayName result = await response.Content.ReadFromJsonAsync<DisplayName>();
+            UserName = result.userName;
+        }
+        StateHasChanged();
+    }
+
+    private async Task<string>? LoadImageFromDatabaseAsync(int pictureId)
+    {
+        UserPicture userPicture = new UserPicture();
+        userPicture.pictureTypeNo = pictureId;
+
+        _Http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.token);
+        var response = await _Http.PostAsJsonAsync<UserPicture>("api/UserPictures/GetUserPictures", userPicture);
+        if (response.IsSuccessStatusCode)
+        {
+            UserPicture result = await response.Content.ReadFromJsonAsync<UserPicture>();
+            return result.base64Picture;
+        }
+        return null; // Example base64 string
+        StateHasChanged();
+    }
+
+    private async Task LoadUserSocials()
+    {
+        _Http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.token);
+        var response = await _Http.GetAsync("api/UserSocials/GetUserSocial");
+        if (response.StatusCode == System.Net.HttpStatusCode.OK)
+        {
+            List<UserSocial> userSocials = await response.Content.ReadFromJsonAsync<List<UserSocial>>();
+            foreach(UserSocial userSocial in userSocials)
+            {
+                switch (userSocial.SocialTypeNo)
+                {
+                    case 1:
+                        instergramSocial = userSocial.SocialValue;
+                        break;
+                    case 2:
+                        snapchatSocial = userSocial.SocialValue;
+                        break;
+                    case 3:
+                        whatsappSocial = userSocial.SocialValue;
+                        break;
+                    case 4:
+                        discordSocial = userSocial.SocialValue;
+                        break;
+                }
+            }
+        }
+        StateHasChanged();
+    }
+
+    private async Task ConvertToBase64(int picNumber, InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+
+        const long maxFileSize = 50 * 1024 * 1024; // 50 MB, adjust as needed
+        var allowedTypes = new[] { "image/png", "image/jpeg", "image/jpg", "image/webp" };
+
+        if (!allowedTypes.Contains(file.ContentType))
+        {
+            // show error to user...
+            return;
+        }
+        if (file.Size > maxFileSize)
+        {
+            // show error to user...
+            return;
+        }
+
+        try
+        {
+            using var ms = new System.IO.MemoryStream();
+            // IMPORTANT: pass maxFileSize to OpenReadStream
+            await file.OpenReadStream(maxFileSize).CopyToAsync(ms);
+            var bytes = ms.ToArray();
+            var base64 = Convert.ToBase64String(bytes);
+            var dataUrl = $"data:{file.ContentType};base64,{base64}";
+
+            switch (picNumber)
+            {
+                case 1:
+                    pictureOne = dataUrl;
+                    await JS.InvokeVoidAsync("previewImage", 1, dataUrl);
+                    break;
+                case 2:
+                    pictureTwo = dataUrl;
+                    await JS.InvokeVoidAsync("previewImage", 2, dataUrl);
+                    break;
+                case 3:
+                    pictureThree = dataUrl;
+                    await JS.InvokeVoidAsync("previewImage", 3, dataUrl);
+                    break;
+            }
+        }
+        catch (Exception ex)
+        {
+            // handle/read error (show UI message)
+            Console.WriteLine($"Image read failed: {ex.Message}");
+        }
+    }
+
+    private void BioChanged(ChangeEventArgs e)
+    {
+        currentBioCharacters = e.Value.ToString().Length;
+        if (currentBioCharacters >= 250)
+        {
+            bio = e.Value.ToString().Substring(0, 250);
+            textAreaBoarderColor = "textarea-boarder-color";
+            currentBioCharacters = bio.Length;
+        }
+        else
+        {
+            textAreaBoarderColor = null;
+            bio = e.Value.ToString();
+        }
+        StateHasChanged();
+    }
+
+    private async void Save()
+    {
+        await UploadProfilePics();
+        await UploadUserBio();
+        await UploadUserAge();
+        await UploadUserRelashionshipStatus();
+        await UploadUserHobbies();
+        await UploadUserName();
+        await UploadUserSocials();
+    }
+
+    private async Task UploadUserHobbies()
+    {
+        _Http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.token);
+        var response = await _Http.PostAsJsonAsync<List<Hobbys>>("api/UserHobby/AddUserHobbies", selectedHobbys);
+    }
+
+    private async Task UploadUserRelashionshipStatus()
+    {
+        UserRelationshipStatusData userRelationshipStatus = userRelationshipStatuses.FirstOrDefault(e => e.relationshipStatusNo == relationshipsStatusNo);
+        _Http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.token);
+        var response = await _Http.PostAsJsonAsync<UserRelationshipStatusData>("api/UserRelationshipStatus/AddUserRelationshipStatus", userRelationshipStatus);
+    }
+
+    private async Task UploadUserAge()
+    {
+        Age age = new Age();
+        age.AgeValue = userAge;
+        _Http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.token);
+        var response = await _Http.PostAsJsonAsync<Age>("api/UserAge/AddUserAge", age);
+    }
+
+    private async Task UploadUserBio()
+    {
+        UserBioDescriptionData userBioDescription = new UserBioDescriptionData();
+        userBioDescription.bioText = bio;
+        _Http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.token);
+        var response = await _Http.PostAsJsonAsync<UserBioDescriptionData>("api/UserBioDescription/AddUserBioDescription", userBioDescription);
+
+    }
+
+    private async Task UploadProfilePics()
+    {
+        for (int i = 1; i < 4; i++)
+        {
+            UserPicture userPicture = new UserPicture();
+            userPicture.pictureTypeNo = i;
+
+            switch (i)
+            {
+                case 1:
+                    userPicture.base64Picture = pictureOne;
+                    break;
+                case 2:
+                    userPicture.base64Picture = pictureTwo;
+                    break;
+                case 3:
+                    userPicture.base64Picture = pictureThree;
+                    break;
+            }
+            if(userPicture.base64Picture != null)
+            {
+                _Http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.token);
+                var response = await _Http.PostAsJsonAsync<UserPicture>("api/UserPictures/AddUserPicture", userPicture);
+            }
+        }
+    }
+
+    private async Task UploadUserName()
+    {
+        DisplayName displayName = new DisplayName();
+        displayName.userName = UserName;
+        _Http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.token);
+        var response = await _Http.PostAsJsonAsync<DisplayName>("api/userName/AddUserName", displayName);
+    }
+
+    private async Task UploadUserSocials()
+    {
+        UserSocial userSocial = new UserSocial();
+        for (int i = 1; i < 5; i++)
+        {
+            switch (i)
+            {
+                case 1:
+                    userSocial.SocialValue = instergramSocial;
+                    userSocial.SocialTypeNo = 1;
+                    break;
+                case 2:
+                    userSocial.SocialValue = snapchatSocial;
+                    userSocial.SocialTypeNo = 2;
+                    break;
+                case 3:
+                    userSocial.SocialValue = whatsappSocial;
+                    userSocial.SocialTypeNo = 3;
+                    break;
+                case 4:
+                    userSocial.SocialValue = discordSocial;
+                    userSocial.SocialTypeNo = 4;
+                    break;
+            }
+
+            _Http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.token);
+            var response = await _Http.PostAsJsonAsync<UserSocial>("api/UserSocials/AddUpdateUserSocial", userSocial);
+        }
+        
+    }
+
+    private void Close()
+    {
+        
+    }
+}

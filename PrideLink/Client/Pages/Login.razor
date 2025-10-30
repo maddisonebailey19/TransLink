@@ -1,0 +1,136 @@
+﻿@page "/login"
+@using PrideLink.Shared.LoginDetails
+@using System.Text.Json
+@using System.Net
+
+@inject IJSRuntime _JS
+@inject HttpClient _Http
+@inject NavigationManager _Navigation
+
+<h3>Login</h3>
+<div class="container d-flex justify-content-center align-items-center vh-100">
+    <div class="card border-primary mb-3" style="max-width: 30rem;">
+        <div class="card-header">Login</div>
+        <div class="card-body">
+            @if (!attemptedLogin)
+            {
+                @if (invalidUserName != null)
+                {
+                    <p>@invalidUserName</p>
+                }
+                <label for="userName">Enter UserName:</label>
+                <input type="email" id="userName" class="form-control" @bind="loginDetails.userName" />
+                <p></p>
+                <label for="password">Enter Password:</label>
+                <input type="password" id="password" class="form-control" @bind="loginDetails.password" />
+                <p></p>
+                <div class="d-flex justify-content-center mt-3">
+                    @if (!createLogin)
+                    {
+                        <button type="button" class="btn btn-primary" style="width: 120px; margin-right: 10px;" @onclick="CheckLogin">Login</button>
+                        <button type="button" class="btn btn-primary" style="width: 120px" @onclick="CreateLogin">Create User</button>
+                    }
+                    else
+                    {
+                        <button type="button" class="btn btn-primary" style="width: 120px" @onclick="SetupUser">Create Login</button>
+                    }
+                </div>
+            }
+            else
+            {
+                <h2>UserName or Password was invalid</h2>
+                <div class="d-flex justify-content-center mt-3">
+                    <button type="button" class="btn btn-primary" style="width: 150px" @onclick="ReTry">Retry</button>
+                    <button type="button" class="btn btn-primary" style="width: 150px" @onclick="CreateLogin">Create User</button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+@code {
+    private bool attemptedLogin = false;
+    private bool createLogin = false;
+    private bool loginCreated = false;
+    private string? invalidUserName = null;
+    LoginDetail loginDetails = new LoginDetail();
+
+    private async void CheckLogin()
+    {
+        string urlString = "?userName=" + loginDetails.userName + "&password=" + loginDetails.password;
+        var response = await _Http.GetAsync("api/Login/Login-Checker" + urlString);
+        if (response.IsSuccessStatusCode)
+        {
+            jwtToken result = await response.Content.ReadFromJsonAsync<jwtToken>();
+            await _JS.InvokeVoidAsync("localStorage.setItem", "Token", JsonSerializer.Serialize(result));
+            if (loginCreated)
+            {
+                _Navigation.NavigateTo("/TermsAndConditions");
+            }
+            else
+            {
+                _Navigation.NavigateTo("/");
+            }
+        }
+        else
+        {
+            attemptedLogin = true;
+            StateHasChanged();
+        }
+    }
+
+    // Changed to return Task so errors can be observed and UI updated reliably
+    private async Task SetupUser()
+    {
+        string URL = "?userName=" + loginDetails.userName + "&password=" + loginDetails.password;
+        var response = await _Http.GetAsync("api/Login/Login-Creator" + URL);
+
+        if (response.IsSuccessStatusCode)
+        {
+            UserCreated result = await response.Content.ReadFromJsonAsync<UserCreated>();
+            if (result.userNo == -1)
+            {
+                invalidUserName = "Username already taken";
+            }
+            else
+            {
+                attemptedLogin = false;
+                createLogin = false;
+                loginCreated = true;
+            }
+
+            StateHasChanged();
+            return;
+        }
+
+        // Handle known server responses (422 used by API when username exists)
+        if (response.StatusCode == HttpStatusCode.UnprocessableEntity)
+        {
+            invalidUserName = "Username already taken";
+        }
+        else if (response.StatusCode == HttpStatusCode.Conflict)
+        {
+            // alternative common status code for duplicates
+            invalidUserName = "Username already taken";
+        }
+        else
+        {
+            // Generic error fallback - show message to user
+            invalidUserName = $"Unable to create account ({(int)response.StatusCode} {response.ReasonPhrase})";
+        }
+
+        StateHasChanged();
+    }
+
+    private async void ReTry()
+    {
+        attemptedLogin = false;
+        StateHasChanged();
+    }
+
+    private async void CreateLogin()
+    {
+        attemptedLogin = false;
+        createLogin = true;
+        StateHasChanged();
+    }
+}

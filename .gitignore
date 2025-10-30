@@ -1,0 +1,21 @@
+# Visual Studio temporary files
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Build results
+[Bb]in/
+[Oo]bj/
+
+# Publish outputs
+*.Publish.xml
+*.pubxml
+*.pubxml.user
+
+# Others
+*.log
+*.dbmdl
+*.bak
+*.tmp

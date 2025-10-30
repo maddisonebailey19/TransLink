@@ -1,0 +1,234 @@
+﻿@page "/FreindFinder"
+@using System.Net.Http.Headers;
+@using PrideLink.Client.Helpers;
+@using PrideLink.Shared.FreindFinderDetails;
+@using PrideLink.Shared.Location;
+@using PrideLink.Shared.LoginDetails;
+@using PrideLink.Client.Shared;
+@inject IJSRuntime JSRuntime
+@inject HttpClient _Http
+@inject jwtHelper _jwt_helper
+
+<style>
+    .scrollable-images-container {
+        display: flex;
+        overflow-x: scroll; /* Enable horizontal scroll */
+        gap: 10px; /* Add some space between images */
+    }
+
+    .card-image {
+        max-height: 200px; /* Adjust the height as needed */
+        flex: 0 0 auto; /* Prevent shrinking of images */
+        width: auto; /* Ensure proportional width */
+        border-radius: 5px;
+    }
+
+    .custom-box {
+        border: 2px solid #000000; /* Blue border color */
+        padding: 15px; /* Padding around the text */
+        border-radius: 5px; /* Rounded corners */
+        background-color: #f8f9fa; /* Light background color */
+    }
+</style>
+@if (isLoading)
+{
+    <LoadingView Percentage="loadingPercentage" LoadingText="Loading, please wait..." />
+}
+else
+{
+    @foreach (UserFreindFinderAccount finderAccount in userFreindFinderAccounts)
+    {
+        <div class="card mb-3">
+            <h3 class="card-header">@finderAccount.UserAccountGeneralInfo.DisplayName</h3>
+            <div class="card-body">
+                <h5 class="card-title">Age: @finderAccount.UserAccountGeneralInfo.Age</h5>
+                <h6 class="card-subtitle text-muted">@cardSubtitle</h6>
+            </div>
+            <div class="scrollable-images-container">
+                @foreach (var base64Image in finderAccount.UserAccountPictures)
+                {
+                    if (base64Image.base64Image != null)
+                    {
+                        <img src="@base64Image.base64Image" class="card-image" alt="Image" />
+                    }
+                }
+            </div>
+            <div class="card-body">
+                <h4>About me</h4>
+                <div class="card-image custom-box">
+                    <p class="card-text">@finderAccount.UserAccountGeneralInfo.BioDescription</p>
+                </div>
+            </div>
+
+            <div class="accordion" id="accordionExample_@finderAccount.userNo">
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="@finderAccount.userNo+_hobbies">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseHobbies_@finderAccount.userNo" aria-expanded="false" aria-controls="collapseHobbies_@finderAccount.userNo">
+                            Hobbies
+                        </button>
+                    </h2>
+                    <div id="collapseHobbies_@finderAccount.userNo" class="accordion-collapse collapse" aria-labelledby="@finderAccount.userNo+_hobbies" data-bs-parent="#accordionExample_@finderAccount.userNo">
+                        <div class="accordion-body">
+                            @foreach (UserAccountHobbies userAccountHobbies in finderAccount.UserAccountHobbies)
+                            {
+                                <button type="button" class="btn btn-primary rounded-pill" disabled="@true" style="margin-right: 10px; margin-top: 10px">@userAccountHobbies.HobbyName</button>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="@finderAccount.userNo+_socials">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSocials_@finderAccount.userNo" aria-expanded="false" aria-controls="collapseSocials_@finderAccount.userNo">
+                            Socials
+                        </button>
+                    </h2>
+                    <div id="collapseSocials_@finderAccount.userNo" class="accordion-collapse collapse" aria-labelledby="@finderAccount.userNo+_socials" data-bs-parent="#accordionExample_@finderAccount.userNo">
+                        <div class="accordion-body">
+                            <div>
+                                <label for="instagram_@finderAccount.userNo" class="form-label mt-4">Instagram</label>
+                                <input type="text" class="form-control" id="instagram_@finderAccount.userNo" placeholder="Instagram" @bind="finderAccount.UserAccountSocials.FirstOrDefault(e => e.socialTypeNo == 1).socialValue">
+
+                                <label for="snapchat_@finderAccount.userNo" class="form-label mt-4">Snapchat</label>
+                                <input type="text" class="form-control" id="snapchat_@finderAccount.userNo" placeholder="Snapchat" @bind="finderAccount.UserAccountSocials.FirstOrDefault(e => e.socialTypeNo == 2).socialValue">
+
+                                <label for="whatsapp_@finderAccount.userNo" class="form-label mt-4">WhatsApp</label>
+                                <input type="text" class="form-control" id="whatsapp_@finderAccount.userNo" placeholder="WhatsApp" @bind="finderAccount.UserAccountSocials.FirstOrDefault(e => e.socialTypeNo == 3).socialValue">
+
+                                <label for="discord_@finderAccount.userNo" class="form-label mt-4">Discord</label>
+                                <input type="text" class="form-control" id="discord_@finderAccount.userNo" placeholder="Discord" @bind="finderAccount.UserAccountSocials.FirstOrDefault(e => e.socialTypeNo == 4).socialValue">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    }
+}
+
+
+
+@code {
+    private bool isLoading = true;
+    private double loadingPercentage = 0;
+
+    private string cardHeader;
+    private string cardTitle;
+    private string cardSubtitle;
+    private List<string> base64Images;
+    private string cardContent;
+    private List<string> listGroupItems;
+    private string cardFooter;
+
+    private double latitude;
+    private double longitude;
+    private bool locationReceived = false;
+    private jwtToken? token;
+    private UserLocationData userLocationData = new UserLocationData();
+    private List<UserFreindFinderAccount> userFreindFinderAccounts = new List<UserFreindFinderAccount>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Log component start
+        await JSRuntime.InvokeVoidAsync("console.log", "FreindFinder.OnInitializedAsync starting");
+
+        // Initialize collections
+        userFreindFinderAccounts = new List<UserFreindFinderAccount>();
+        base64Images = new List<string>(); //TODO change to get pics
+        listGroupItems = new List<string>(); //TODO probably change with hobbys
+
+        // Get token
+        token = await _jwt_helper.GetJWTToken();
+
+        // Log token to browser console and server console
+        if (token == null)
+        {
+            await JSRuntime.InvokeVoidAsync("console.log", "JWT token: null");
+            Console.WriteLine("JWT token: null");
+            // If you want to stop initialization when there's no token, uncomment return:
+            // return;
+        }
+        else
+        {
+            await JSRuntime.InvokeVoidAsync("console.log", $"JWT token: {token.token}");
+            await JSRuntime.InvokeVoidAsync("console.log", $"JWT expireDate: {token.expireDate:O}");
+            Console.WriteLine($"JWT token: {token.token}, expireDate: {token.expireDate:O}");
+        }
+
+        loadingPercentage += 25;
+        StateHasChanged();
+
+        // Step 1: Get location
+        await GetLocation();
+        loadingPercentage += 25;
+        StateHasChanged();
+
+        // Step 2: Upload user location (guarded)
+        await UploadUserLocation();
+        loadingPercentage += 25;
+        StateHasChanged();
+
+        // Step 3: Get user account info (guarded)
+        await GetAllUserAccountInfo();
+        loadingPercentage += 25;
+        StateHasChanged();
+
+        isLoading = false;
+        StateHasChanged();
+    }
+
+    private async Task GetLocation()
+    {
+        try
+        {
+            var location = await JSRuntime.InvokeAsync<Dictionary<string, double>>("getLocation");
+            userLocationData.Latitude = (float)location["latitude"];
+            userLocationData.Longitude = (float)location["longitude"];
+            locationReceived = true;
+
+            latitude = userLocationData.Latitude;
+            longitude = userLocationData.Longitude;
+
+            Console.WriteLine($"Received Location: Latitude = {latitude}, Longitude = {longitude}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error retrieving location: {ex.Message}");
+        }
+    }
+
+    private async Task UploadUserLocation()
+    {
+        if (token == null || string.IsNullOrEmpty(token.token))
+        {
+            Console.WriteLine("UploadUserLocation: no token, skipping upload");
+            await JSRuntime.InvokeVoidAsync("console.log", "UploadUserLocation: no token, skipping upload");
+            return;
+        }
+
+        _Http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.token);
+        var response = await _Http.PostAsJsonAsync<UserLocationData>("api/UserLocation/AddUpdateUserLocation", userLocationData);
+        Console.WriteLine($"UploadUserLocation response: {response.StatusCode}");
+    }
+
+    private async Task GetAllUserAccountInfo()
+    {
+        if (token == null || string.IsNullOrEmpty(token.token))
+        {
+            Console.WriteLine("GetAllUserAccountInfo: no token, skipping API call");
+            await JSRuntime.InvokeVoidAsync("console.log", "GetAllUserAccountInfo: no token, skipping API call");
+            return;
+        }
+
+        _Http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.token);
+        var response = await _Http.PostAsJsonAsync<UserLocationData>("api/FreindFinderAccountInfo/GetFreindFinderAccountInfo", userLocationData);
+        Console.WriteLine($"GetAllUserAccountInfo response: {response.StatusCode}");
+        if (response.IsSuccessStatusCode)
+        {
+            var content = await response.Content.ReadFromJsonAsync<List<UserFreindFinderAccount>>();
+            userFreindFinderAccounts = content ?? new List<UserFreindFinderAccount>();
+            Console.WriteLine($"Fetched {userFreindFinderAccounts.Count} accounts");
+        }
+    }
+}

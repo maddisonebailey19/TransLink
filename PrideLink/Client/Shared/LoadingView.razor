@@ -1,0 +1,53 @@
+﻿@code {
+    [Parameter] public double Percentage { get; set; } = 0; // Default percentage is 0
+    [Parameter] public string LoadingText { get; set; } = "Loading"; // Default loading text
+}
+
+<div class="loading-progress">
+    <svg viewBox="0 0 100 100" width="8rem" height="8rem">
+        <circle cx="50" cy="50" r="40" />
+        <circle cx="50" cy="50" r="40" style="--blazor-load-percentage: @(Percentage);" />
+    </svg>
+    <div class="loading-progress-text2">
+        @Percentage%
+    </div>
+</div>
+
+<style>
+    .loading-progress {
+        position: relative;
+        display: block;
+        width: 8rem;
+        height: 8rem;
+        margin: 20vh auto 1rem auto;
+    }
+
+        .loading-progress svg {
+            display: block;
+            margin: auto;
+        }
+
+        .loading-progress circle {
+            fill: none;
+            stroke: #e0e0e0;
+            stroke-width: 0.6rem;
+            transform-origin: 50% 50%;
+            transform: rotate(-90deg);
+        }
+
+            .loading-progress circle:last-child {
+                stroke: #1b6ec2;
+                stroke-dasharray: calc(3.141 * var(--blazor-load-percentage, 0%) * 0.8), 500%;
+                transition: stroke-dasharray 0.05s ease-in-out;
+            }
+
+    .loading-progress-text2 {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+        font-weight: bold;
+        font-size: 1.2rem;
+    }
+</style>

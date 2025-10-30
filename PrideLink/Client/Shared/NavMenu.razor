@@ -1,0 +1,100 @@
+﻿<style>
+
+</style>
+
+
+<div class="top-row ps-3 navbar navbar-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="">
+            TransLink
+            <img src="TransBanner.png" alt="Logo" style="height: 30px;" class="d-inline-block align-text-bottom" />
+        </a>
+        <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+    </div>
+</div>
+@*<div class="top-row ps-3 navbar navbar-dark" style="height: 100px;"> <!-- Set a fixed height for the navbar -->
+    <div class="container-fluid h-100">
+        <a class="navbar-brand w-100 h-100 p-0 m-0" href="">
+            <img src="TransBanner-Photoroom.png" alt="Logo" class="img-fluid w-100 h-100" style="object-fit: cover;" />
+        </a>
+        <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+    </div>
+</div>*@
+
+
+<div class="@NavMenuCssClass nav-scrollable" @onclick="ToggleNavMenu">
+    <nav class="flex-column">
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                <span class="oi oi-home" aria-hidden="true"></span> Home
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="FreindFinder">
+                <span class="oi oi-people" aria-hidden="true"></span> Freind Finder
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="incidentmap">
+                <span class="oi oi-map" aria-hidden="true"></span> Incident Map
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="alert">
+                <span class="oi oi-bell" aria-hidden="true"></span> Alert
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" @onclick="ShowSettingsSubMenu">
+                <span class="oi oi-cog" aria-hidden="true"></span> Settings
+            </NavLink>
+            @if (settingsSubmenu)
+            {
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="AccountSettings" @onclick="HideSettingsSubMenu">
+                        @*TODO change to correct page*@
+                        <span class="oi oi-dashboard" aria-hidden="true"></span> Account Settings
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="alert" @onclick="HideSettingsSubMenu">
+                        @*TODO change to correct page*@
+                        <span class="oi oi-bell" aria-hidden="true"></span> SOS Contacts
+                    </NavLink>
+                </div>
+            }
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="login">
+                <span class="oi oi-account-login" aria-hidden="true"></span> Login
+            </NavLink>
+        </div>
+        
+    </nav>
+</div>
+
+@code {
+    private bool collapseNavMenu = true;
+    private bool settingsSubmenu = false;
+
+    private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+    private void ShowSettingsSubMenu()
+    {
+        settingsSubmenu = !settingsSubmenu; 
+        collapseNavMenu = !collapseNavMenu;
+    }
+
+    private void HideSettingsSubMenu()
+    {
+        settingsSubmenu = !settingsSubmenu;
+    }
+
+    private void ToggleNavMenu()
+    {
+        collapseNavMenu = !collapseNavMenu;
+    }
+}

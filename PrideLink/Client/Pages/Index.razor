@@ -1,0 +1,47 @@
+﻿@page "/"
+@using PrideLink.Client.Helpers;
+@using PrideLink.Shared.LoginDetails;
+@inject jwtHelper _jwtHelper
+@inject NavigationManager _navigationManager
+<style>
+    .image-button {
+        background-color: rgba(255, 255, 255, 0);
+        background-image: url('Alarm.png'); /* Replace with your image path */
+        background-size: cover; /* Scale the image to cover the button */
+        background-repeat: no-repeat; /* Prevent repeating */
+        border: none; /* No border */
+        width: 150px; /* Set the width of the button */
+        height: 150px; /* Set the height of the button */
+        cursor: pointer; /* Pointer cursor on hover */
+        outline: none; /* Remove the outline when clicked */
+        padding: 0; /* Remove padding */
+        display: inline-block; /* Allows setting dimensions */
+    }
+</style>
+
+<PageTitle>Index</PageTitle>
+
+<h1>Hello, world!</h1>
+
+Welcome to your new app.
+
+<SurveyPrompt Title="How is Blazor working for you?" />
+
+@code{
+    protected override async Task OnInitializedAsync()
+    {
+        jwtToken? token = await _jwtHelper.GetJWTToken();
+        if(token == null)
+        {
+            _navigationManager.NavigateTo("/login");
+        }
+        else
+        {
+            if(token.expireDate <= DateTime.UtcNow.AddMinutes(-5))
+            {
+                //TODO possibly check if user and password is stored and use that to auto login
+                _navigationManager.NavigateTo("/login");
+            }
+        }
+    }
+}
