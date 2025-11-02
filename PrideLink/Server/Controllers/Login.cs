@@ -114,6 +114,19 @@ namespace PrideLink.Server.Controllers
             }
 
         }
+
+        [HttpGet]
+        [Authorize(Roles = "Admin,General")]
+        [Route("GetUserID")]
+        public IActionResult GetUserID()
+        {
+            var jwtToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+
+            string userNo = _jWTHelper.GetUserNo(jwtToken);
+
+            return Ok(userNo);
+
+        }
         //TODO patch update password
     }
 }

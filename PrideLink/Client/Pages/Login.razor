@@ -3,11 +3,13 @@
 @using PrideLink.Shared.LoginDetails
 @using System.Text.Json
 @using System.Net
+@using System.Net.Http.Headers
 
 @inject LoginStatus _loginStatus;
 @inject IJSRuntime _JS
 @inject HttpClient _Http
 @inject NavigationManager _Navigation
+@inject NotificationService _notificationService
 
 <h3>Login</h3>
 <div class="container d-flex justify-content-center align-items-center vh-100">
@@ -63,7 +65,7 @@
         if (response.IsSuccessStatusCode)
         {
             jwtToken result = await response.Content.ReadFromJsonAsync<jwtToken>();
-            await _JS.InvokeVoidAsync("localStorage.setItem", "Token", JsonSerializer.Serialize(result));
+            _JS.InvokeVoidAsync("localStorage.setItem", "Token", JsonSerializer.Serialize(result));
             if (loginCreated)
             {
                 _Navigation.NavigateTo("/TermsAndConditions");
@@ -72,7 +74,17 @@
             {
                 _Navigation.NavigateTo("/");
             }
-            _loginStatus.NotifyStateChanged();
+            _Http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", result.token);
+            var userNoResponse = await _Http.GetAsync("api/Login/GetUserID");
+            if (userNoResponse.IsSuccessStatusCode)
+            {
+                string userNo = await userNoResponse.Content.ReadAsStringAsync();
+                _loginStatus.userNo = userNo;
+                _loginStatus.NotifyStateChanged();
+                await _notificationService.InitializeAsync(userNo, _Navigation);
+            }
+            
+            
         }
         else
         {

@@ -6,6 +6,9 @@ using PrideLink.Server.Interfaces;
 using PrideLink.Shared.General;
 using PrideLink.Shared.UserInfo;
 using System.Data;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.SignalR;
+using PrideLink.Server.Hubs;
 
 namespace PrideLink.Server.Controllers
 {
@@ -15,10 +18,12 @@ namespace PrideLink.Server.Controllers
     {
         private readonly IGeneralInterface _generalInterface;
         private readonly JWTHelper _jWTHelper;
+        private readonly IHubContext<NotificationHub> _hubContext;
 
-        public General(IGeneralInterface generalInterface, JWTHelper jWTHelper)
+        public General(IGeneralInterface generalInterface, JWTHelper jWTHelper, IHubContext<NotificationHub> hubContext)
         {
             _generalInterface = generalInterface;
+            _hubContext = hubContext;
             this._jWTHelper = jWTHelper;
         }
 
@@ -46,12 +51,15 @@ namespace PrideLink.Server.Controllers
         }
 
         [HttpPatch]
-        [Authorize(Roles = "Admin,General")]
+        //[Authorize(Roles = "Admin,General")]
         [Route("UpdateVerificationStatus")]
-        public IActionResult UpdateVerificationStatus(int userNo, string userTypeName)
+        public async Task<IActionResult> UpdateVerificationStatus(int userNo, string userTypeName)
         {
             _generalInterface.UpdateVerificationStatus(userNo, userTypeName);
 
+            var message = "Your account has been verified!";//🎉
+            await _hubContext.Clients.User(userNo.ToString()).SendAsync("ReceiveNotification", message);
+            
             return Ok();
         }
     }

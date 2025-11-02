@@ -1,12 +1,15 @@
-﻿@using PrideLink.Client.Helpers
+﻿@using Blazored.Toast.Configuration 
+@using PrideLink.Client.Helpers
 @using PrideLink.Shared.LoginDetails
 @using System.Net.Http.Headers
+@using Microsoft.AspNetCore.SignalR.Client;
 @inject IJSRuntime JSRuntime
 @inject HttpClient _Http
 @inject jwtHelper _jwt_helper
 @inject LoginStatus _loginStatus
 @inherits LayoutComponentBase
-
+@inject NavigationManager Nav
+<Notification />
 <div class="page">
     <div class="sidebar">
         <NavMenu />
@@ -22,15 +25,56 @@
         </article>
     </main>
 </div>
+<BlazoredToasts
+    Position="Blazored.Toast.Configuration.ToastPosition.TopRight"
+    Timeout="30"
+    IconType="IconType.FontAwesome"
+    SuccessClass="success-toast-override"
+    SuccessIcon="fa fa-thumbs-up"
+    ErrorIcon="fa fa-bug"
+    ShowProgressBar = "true"
+/>
 
 @code {
     private string? verifiedStatus = "";
     private jwtToken? token;
+    private HubConnection? hubConnection;
+    private Notification notification;
 
     protected override async Task OnInitializedAsync()
     {
+        // Build the connection
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(Nav.ToAbsoluteUri("/notificationhub"))
+            .Build();
+
+        // Handle messages from the server
+        hubConnection.On<string>("ReceiveNotification", (message) =>
+        {
+            // TODO: Replace this with a popup, toast, or UI update
+            Console.WriteLine($"Notification: {message}");
+        });
+
+        try
+        {
+            await hubConnection.StartAsync();
+            Console.WriteLine("Connected to Notification Hub!");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to connect to SignalR hub: {ex.Message}");
+        }
+
         _loginStatus.OnChange += async () => await RefreshVerificationStatus();
         await RefreshVerificationStatus();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.DisposeAsync();
+        }
     }
 
     private async Task RefreshVerificationStatus()

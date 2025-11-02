@@ -249,6 +249,7 @@ else
         var response = await _Http.PatchAsync("/api/General/UpdateVerificationStatus?userNo=" + selectedUserNo + "&userTypeName=Verified", null);
         if (response.IsSuccessStatusCode)
         {
+
             userFreindFinderAccounts.FirstOrDefault(e => e.userNo == selectedUserNo).UserAccountGeneralInfo.UserVerified = "Verified";
             StateHasChanged();
         }

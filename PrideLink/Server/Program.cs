@@ -1,10 +1,12 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.ResponseCompression;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.IdentityModel.Tokens;
 using PrideLink.Server.Controllers;
 using PrideLink.Server.Helpers;
+using PrideLink.Server.Hubs;
 using PrideLink.Server.Interfaces;
 using PrideLink.Server.TransLinkDataBase;
 using System;
@@ -12,6 +14,8 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddSingleton<IUserIdProvider, CustomUserIdProvider>();
+builder.Services.AddSignalR();
 // Add services to the container.
 
 // If your Jwt:Key is base64 (as in appsettings.json) decode it consistently:
@@ -62,7 +66,8 @@ builder.Services.AddCors(options =>
                 "http://localhost:7126"   // server http (if calling directly)
             )
             .AllowAnyHeader()
-            .AllowAnyMethod();
+            .AllowAnyMethod()
+            .AllowCredentials();
             // .AllowCredentials(); // only if you use cookies/credentials - do NOT use with AllowAnyOrigin
     });
 });
@@ -109,6 +114,7 @@ app.UseAuthorization();
 
 app.MapRazorPages();
 app.MapControllers();
+app.MapHub<NotificationHub>("/notificationhub");
 app.MapFallbackToFile("index.html");
 
 app.Run();

@@ -1,0 +1,39 @@
+﻿@using PrideLink.Client.Helpers
+<div class="notification-container">
+    @foreach (var msg in messages)
+    {
+        <div class="notification">@msg</div>
+    }
+</div>
+
+@code {
+    private List<string> messages = new();
+
+    [Inject] private NotificationStatus NotificationService { get; set; }
+
+    protected override void OnInitialized()
+    {
+        NotificationService.OnNotify += Show;
+    }
+
+    private void Show(string message)
+    {
+        messages.Add(message);
+        InvokeAsync(StateHasChanged);
+
+        // Remove after 3 seconds
+        _ = Task.Delay(3000).ContinueWith(_ =>
+        {
+            InvokeAsync(() =>
+            {
+                messages.Remove(message);
+                StateHasChanged();
+            });
+        });
+    }
+
+    public void Dispose()
+    {
+        NotificationService.OnNotify -= Show;
+    }
+}
