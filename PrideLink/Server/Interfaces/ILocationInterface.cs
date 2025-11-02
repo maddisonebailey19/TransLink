@@ -7,6 +7,6 @@ namespace PrideLink.Server.Interfaces
     {
         public bool AddUpdateUserLocation(UserLocationData location, int userNo);
 
-        public List<int> GetLocation(UserLocationData userLocation);
+        public List<int> GetLocation(UserLocationData userLocation, List<string> roles);
     }
 }

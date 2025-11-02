@@ -1,11 +1,11 @@
-﻿@page "/AccountSettings"
+﻿@page "/ProfileSettings"
 @using PrideLink.Client.Helpers;
 @using PrideLink.Shared.General;
 @using PrideLink.Shared.LoginDetails;
 @using PrideLink.Shared.UserInfo;
 @using System.Net.Http.Headers;
 @using PrideLink.Client.Internal_Models;
-<h3>Account Settings</h3>
+<h3>Profile Settings</h3>
 
 @inject IJSRuntime JS
 @inject HttpClient _Http
@@ -96,7 +96,7 @@
 </style>
 @if (isLoading)
 {
-    <LoadingView Percentage="loadingPercentage" LoadingText="Loading, please wait..." />
+    <LoadingView Percentage="loadingPercentage" LoadingText="Loading, please wait..." CurrentStepText="@currentStep" />
 }
 else
 {
@@ -275,6 +275,8 @@ else
 @code {
     private bool isLoading = true;
     private double loadingPercentage = 0;
+    private string currentStep;
+    private int loadingPercentageIncrement = 0;
 
     private string pictureOne;
     private string pictureTwo;
@@ -295,6 +297,29 @@ else
     private string? discordSocial = null;
     List<Hobbies> hobbys = new List<Hobbies>();
     List<Hobbys> selectedHobbys = new List<Hobbys>();
+
+    private void CalculateLoadingIncrement(int totalSteps)
+    {
+        loadingPercentage = 0;
+        loadingPercentageIncrement = 100 / totalSteps;
+        isLoading = true;
+    }
+
+    private void LoadingProgress(string stepName, bool loading = true)
+    {
+        if(loading == false)
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+        else
+        {
+            loadingPercentage += loadingPercentageIncrement;
+            currentStep = stepName;
+            StateHasChanged();
+        }
+
+    }
 
     private void AddHobbyToUser(int hobbyNo)
     {
@@ -321,47 +346,76 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        token = await _jwtHelper.GetJWTToken();
-        loadingPercentage += 10;
-        StateHasChanged();
+        // Define each step with a friendly name
+        var steps = new List<(string Name, Func<Task> Action)>
+        {
+            ("Get JWT Token", async () => { token = await _jwtHelper.GetJWTToken(); }),
+            ("Load Relationship Statuses", async () => await LoadRelastionshipStatuses()),
+            ("Load User Age", async () => await LoadUserAge()),
+            ("Load User Description", async () => await LoadUserDescription()),
+            ("Load Hobbies", async () => await LoadHobbies()),
+            ("Load User Name", async () => await LoadUserName()),
+            ("Load User Socials", async () => await LoadUserSocials()),
+            ("Load Picture 1", async () => { pictureOne = await LoadImageFromDatabaseAsync(1); }),
+            ("Load Picture 2", async () => { pictureTwo = await LoadImageFromDatabaseAsync(2); }),
+            ("Load Picture 3", async () => { pictureThree = await LoadImageFromDatabaseAsync(3); })
+        };
 
-        await LoadRelastionshipStatuses();
-        loadingPercentage += 10;
-        StateHasChanged();
+        CalculateLoadingIncrement(steps.Count);
 
-        await LoadUserAge();
-        loadingPercentage += 10;
-        StateHasChanged();
+        for (int i = 0; i < steps.Count; i++)
+        {
+            var (stepName, action) = steps[i];
 
-        await LoadUserDescription();
-        loadingPercentage += 10;
-        StateHasChanged();
+            try
+            {
+                await action();
+            }
+            catch (Exception ex)
+            {
+                // Continue on errors but log for debugging
+                Console.WriteLine($"OnInitialized step '{stepName}' failed: {ex.Message}");
+            }
 
-        await LoadHobbies();
-        loadingPercentage += 10;
-        StateHasChanged();
+            // Increment progress after each step; stop loading on the last step
+            if (i == steps.Count - 1)
+                LoadingProgress(stepName, false);
+            else
+                LoadingProgress(stepName);
+        }
 
-        await LoadUserName();
-        loadingPercentage += 10;
-        StateHasChanged();
+        //CalculateLoadingIncrement(10);
+        //
+        //token = await _jwtHelper.GetJWTToken();
+        //LoadingProgress();
+        //
+        //await LoadRelastionshipStatuses();
+        //LoadingProgress();
+        //
+        //await LoadUserAge();
+        //LoadingProgress();
+        //
+        //await LoadUserDescription();
+        //LoadingProgress();
+        //
+        //await LoadHobbies();
+        //LoadingProgress();
+        //
+        //await LoadUserName();
+        //LoadingProgress();
+        //
+        //await LoadUserSocials();
+        //LoadingProgress();
+        //// Simulate fetching from the database
+        //pictureOne = await LoadImageFromDatabaseAsync(1);  // Replace with your actual loading logic
+        //LoadingProgress();
+        //
+        //pictureTwo = await LoadImageFromDatabaseAsync(2);  // Replace with your actual loading logic
+        //LoadingProgress();
+        //
+        //pictureThree = await LoadImageFromDatabaseAsync(3);  // Replace with your actual loading logic
+        //LoadingProgress(false);
 
-        await LoadUserSocials();
-        loadingPercentage += 10;
-        StateHasChanged();
-        // Simulate fetching from the database
-        pictureOne = await LoadImageFromDatabaseAsync(1);  // Replace with your actual loading logic
-        loadingPercentage += 10;
-        StateHasChanged();
-
-        pictureTwo = await LoadImageFromDatabaseAsync(2);  // Replace with your actual loading logic
-        loadingPercentage += 10;
-        StateHasChanged();
-
-        pictureThree = await LoadImageFromDatabaseAsync(3);  // Replace with your actual loading logic
-        loadingPercentage += 10;
-        isLoading = false;
-        StateHasChanged();
-        
     }
 
     private async Task LoadHobbies()
@@ -437,7 +491,7 @@ else
             {
                 relationshipsStatusNo = indexNo+1;
             }
-            
+
         }
         StateHasChanged();
     }
@@ -593,13 +647,75 @@ else
 
     private async void Save()
     {
-        await UploadProfilePics();
-        await UploadUserBio();
-        await UploadUserAge();
-        await UploadUserRelashionshipStatus();
-        await UploadUserHobbies();
-        await UploadUserName();
-        await UploadUserSocials();
+
+        var steps = new List<(string Name, Func<Task> Action)>
+        {
+            ("Uploading Profile Pics", async () => { await UploadProfilePics(); }),
+            ("Uploading User Bio", async () => await UploadUserBio()),
+            ("Uploading User Age", async () => await UploadUserAge()),
+            ("Uploading User Relationship Status", async () => await UploadUserRelashionshipStatus()),
+            ("Uploading User Hobbies", async () => await UploadUserHobbies()),
+            ("Uploading User Name", async () => await UploadUserName()),
+            ("Uploading User Socials", async () => await UploadUserSocials())
+        };
+
+        CalculateLoadingIncrement(steps.Count);
+
+        for (int i = 0; i < steps.Count; i++)
+        {
+            var (stepName, action) = steps[i];
+
+            try
+            {
+                await action();
+            }
+            catch (Exception ex)
+            {
+                // Continue on errors but log for debugging
+                Console.WriteLine($"OnInitialized step '{stepName}' failed: {ex.Message}");
+            }
+
+            // Increment progress after each step; stop loading on the last step
+            if (i == steps.Count - 1)
+                LoadingProgress(stepName, false);
+            else
+                LoadingProgress(stepName);
+        }
+        string message = "Profile updated successfully!";
+        Console.WriteLine($"[TOAST] {message}"));
+        // isLoading = true;
+        // loadingPercentage = 0;
+
+        // await UploadProfilePics();
+        // loadingPercentage += 16;
+        // StateHasChanged();
+
+        // await UploadUserBio();
+        // loadingPercentage += 16;
+        // StateHasChanged();
+
+        // await UploadUserAge();
+        // loadingPercentage += 16;
+        // StateHasChanged();
+
+        // await UploadUserRelashionshipStatus();
+        // loadingPercentage += 16;
+        // StateHasChanged();
+
+        // await UploadUserHobbies();
+        // loadingPercentage += 16;
+        // StateHasChanged();
+
+        // await UploadUserName();
+        // loadingPercentage += 16;
+        // StateHasChanged();
+
+        // await UploadUserSocials();
+        // loadingPercentage += 16;
+        // StateHasChanged();
+
+        // isLoading = false;
+        // StateHasChanged();
     }
 
     private async Task UploadUserHobbies()

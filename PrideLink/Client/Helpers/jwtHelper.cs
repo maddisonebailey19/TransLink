@@ -18,8 +18,10 @@ namespace PrideLink.Client.Helpers
             try
             {
                 string? result = await _JS.InvokeAsync<string>("localStorage.getItem", "Token");
-                if (string.IsNullOrWhiteSpace(result))
+                Console.WriteLine("1 Token is: " + result);
+                if (result == null || string.IsNullOrWhiteSpace(result))
                 {
+                    Console.WriteLine("no token found");
                     return null;
                 }
 

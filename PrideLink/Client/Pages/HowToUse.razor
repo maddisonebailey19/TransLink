@@ -1,28 +1,28 @@
 ﻿@page "/How_to_use"
 @inject NavigationManager _NavigationManager
 
-<h3>HowToUse</h3>
+<h3>How to use</h3>
 <div class="container d-flex justify-content-center align-items-center">
     <div class="card border-primary mb-3" style="max-width: 20rem;">
         <div class="card-header">Making freinds</div>
         <div class="card-body">
             <h4 class="card-title">How to make freinds</h4>
-            <p class="card-text">The main purpose of this app is to make trans freinds.</p>
-            <p class="card-text">On the Freind Finder tab you will see a list of people near you.</p>
-            <p class="card-text">We do not host chatting on this platform but you will see pictures with there: Snapchat, Instergram, Discord or Whatsapp.</p>
-            <p class="card-text">From there you can add them and start talking :)</p>
+            <p class="card-text">The main purpose of this app is to help trans people make freinds.</p>
+            <p class="card-text">On the freind Finder tab you will see a list of people near you.</p>
+            <p class="card-text">We do not host chatting on this platform, but you will see links to their Snapchat, Instagram, Discord, or WhatsApp.</p>
+            <p class="card-text">From there you can add them and start talking.</p>
         </div>
     </div>
 </div>
 
 <div class="container d-flex justify-content-center align-items-center">
     <div class="card border-primary mb-3" style="max-width: 20rem;">
-        <div class="card-header">Alert System</div>
+        <div class="card-header">Alert system</div>
         <div class="card-body">
-            <h4 class="card-title">What is the alart system</h4>
-            <p class="card-text">On the Alert tab you will see a red button once pushed will send a message to to your freinds that you have setup to be alerted.</p>
-            <p class="card-text">What is this used for? Unfortuanly when out and about we come across some not very nice people and this is a quick way to call out for help.</p>
-            <p class="card-text">Why should i use this? using this does two things instantly sends a message to your freinds with your current location. The platform will also log the time and place and this data will be added to the heat map.</p>
+            <h4 class="card-title">What is the alert system?</h4>
+            <p class="card-text">On the Alert tab you will see a red button. Once pushed it will send a message to the freinds you have set up to be alerted.</p>
+            <p class="card-text">What is this used for? Unfortunately, when out and about we sometimes encounter people who are not very nice — this is a quick way to call for help.</p>
+            <p class="card-text">Why should I use this? Using the alert does two things: it instantly sends a message to your freinds with your current location, and the platform logs the time and place so the data can be added to the heat map.</p>
         </div>
     </div>
 </div>
@@ -31,10 +31,10 @@
     <div class="card border-primary mb-3" style="max-width: 20rem;">
         <div class="card-header">Heat map</div>
         <div class="card-body">
-            <h4 class="card-title">What is the heat map</h4>
-            <p class="card-text">On the heat map tab it will show you the places in your area that are hot spots where hate crimes have happened.</p>
-            <p class="card-text">Why is this usefull? Some people are very anxious about heading outside because of these hate crimes and they can use this map to know where to avoid and at what times.</p>
-            <p class="card-text">What is my plan for the heat map. If together we can collect enough information i plan to use this data to help police patrol the areas that need it the most making outside safer.</p>
+            <h4 class="card-title">What is the heat map?</h4>
+            <p class="card-text">On the Heat Map tab you will see places in your area that are hotspots where hate crimes have occurred.</p>
+            <p class="card-text">Why is this useful? Some people feel anxious about going outside because of these incidents. The map helps users know where to avoid and at what times.</p>
+            <p class="card-text">What is the plan for the heat map? If we collect enough information, we can use this data to help police focus patrols on areas that need it most, making the outdoors safer.</p>
         </div>
     </div>
 </div>
@@ -45,6 +45,6 @@
 @code {
     public void CreateProfile()
     {
-        _NavigationManager.NavigateTo("/AccountSettings");
+        _NavigationManager.NavigateTo("/ProfileSettings");
     }
 }

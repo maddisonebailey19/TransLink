@@ -34,6 +34,7 @@ namespace PrideLink.Server.Helpers
                         UserId = Guid.NewGuid().ToString(),
                         Login = userName,
                         Password = password,
+                        UserType = 3,
                         Active = true,
                     };
                     context.Add(tblUser);

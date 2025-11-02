@@ -63,5 +63,42 @@ namespace PrideLink.Server.Helpers
                 return null;
             }
         }
+        private ClaimsPrincipal? ValidateTokenAndGetPrincipal(string token)
+        {
+            var tokenHandler = new JwtSecurityTokenHandler();
+            try
+            {
+                var keyBytes = Convert.FromBase64String(_config["Jwt:Key"]);
+                var claimsPrincipal = tokenHandler.ValidateToken(token, new TokenValidationParameters
+                {
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(keyBytes),
+                    ValidateIssuer = false,
+                    ValidateAudience = false,
+                    ClockSkew = TimeSpan.Zero
+                }, out SecurityToken validatedToken);
+
+                return claimsPrincipal;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Token validation failed: {ex.Message}");
+                return null;
+            }
+        }
+
+        public List<string> GetRoles(string token)
+        {
+            var principal = ValidateTokenAndGetPrincipal(token);
+            if (principal == null) return new List<string>();
+
+            // roles are issued as ClaimTypes.Role by GenerateJwtToken
+            var roles = principal.Claims
+                .Where(c => c.Type == ClaimTypes.Role || c.Type == "role")
+                .Select(c => c.Value)
+                .ToList();
+
+            return roles;
+        }
     }
 }

@@ -1,4 +1,11 @@
-﻿@inherits LayoutComponentBase
+﻿@using PrideLink.Client.Helpers
+@using PrideLink.Shared.LoginDetails
+@using System.Net.Http.Headers
+@inject IJSRuntime JSRuntime
+@inject HttpClient _Http
+@inject jwtHelper _jwt_helper
+@inject LoginStatus _loginStatus
+@inherits LayoutComponentBase
 
 <div class="page">
     <div class="sidebar">
@@ -7,7 +14,7 @@
 
     <main>
         <div class="top-row px-4">
-            <a href="https://docs.microsoft.com/aspnet/" target="_blank">About</a>
+            <a href="https://docs.microsoft.com/aspnet/" target="_blank">@verifiedStatus</a>
         </div>
 
         <article class="content px-4">
@@ -15,3 +22,47 @@
         </article>
     </main>
 </div>
+
+@code {
+    private string? verifiedStatus = "";
+    private jwtToken? token;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _loginStatus.OnChange += async () => await RefreshVerificationStatus();
+        await RefreshVerificationStatus();
+    }
+
+    private async Task RefreshVerificationStatus()
+    {
+        token = await _jwt_helper.GetJWTToken();
+        Console.WriteLine("2 Token is: " + token);
+
+        if (token != null)
+        {
+            Console.WriteLine("Token accepted");
+            _Http.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", token.token);
+
+            var response = await _Http.GetAsync("api/General/UserVerificationStatus");
+
+            if (response.IsSuccessStatusCode)
+            {
+                verifiedStatus = await response.Content.ReadAsStringAsync();
+            }
+            else
+            {
+                verifiedStatus = "Unable to verify user";
+            }
+
+            StateHasChanged();
+        }
+        else
+        {
+            Console.WriteLine("Token declined");
+            verifiedStatus = "";
+        }
+
+        Console.WriteLine("error");
+    }
+}

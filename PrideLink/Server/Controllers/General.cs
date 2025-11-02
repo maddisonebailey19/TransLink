@@ -31,5 +31,28 @@ namespace PrideLink.Server.Controllers
             List<Hobbys> response = _generalInterface.GetHobbies();
             return Ok(response);
         }
+
+        [HttpGet]
+        [Authorize(Roles = "Admin,General")]
+        [Route("UserVerificationStatus")]
+        public IActionResult GetVerificationStatus()
+        {
+            var jwtToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+
+            int userNo = int.Parse(_jWTHelper.GetUserNo(jwtToken));
+
+            string userStatus = _generalInterface.UserVerificationStatus(userNo);
+            return Ok(userStatus);
+        }
+
+        [HttpPatch]
+        [Authorize(Roles = "Admin,General")]
+        [Route("UpdateVerificationStatus")]
+        public IActionResult UpdateVerificationStatus(int userNo, string userTypeName)
+        {
+            _generalInterface.UpdateVerificationStatus(userNo, userTypeName);
+
+            return Ok();
+        }
     }
 }

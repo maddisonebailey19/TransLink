@@ -8,60 +8,77 @@
 @using PrideLink.Shared.UserOptIn;
 @using System.Net.Http.Headers;
 
-<h3>Terms And Conditions</h3>
-<div class="container d-flex justify-content-center align-items-center">
-    <div class="card border-primary mb-3" style="max-width: 20rem;">
-        <div class="card-header">Data protection</div>
-        <div class="card-body">
-            <h4 class="card-title">Storing your data</h4>
-            <p class="card-text">We only keep data that is used by the application. We do not sell or share data.</p>
-            <p class="card-text">For example we collect your email for two purposes.</p>
-            <p class="card-text">One: we use it to validate that you are not a bot.</p>
-            <p class="card-text">Two: we use it to send you notification as part of the alert system for this platform</p>
-            <p class="card-text">You can opt in and out of this at any point but will limit the functionality of this platform</p>
-            <div class="mt-3 d-flex justify-content-center">
-                <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" id="flexSwitchCheckDefault" @bind="emailOptIn">
-                    <label class="form-check-label" for="flexSwitchCheckDefault">Opt in/out</label>
-                </div>
-            </div>
-            <div class="mt-3 d-flex justify-content-center">
-                @if (emailOptIn)
+@if (isLoading)
+{
+    <LoadingView Percentage="loadingPercentage" LoadingText="Loading, please wait..." />
+}
+else
+{
+    <h3>Terms And Conditions</h3>
+    <div class="container d-flex justify-content-center align-items-center">
+        <div class="card border-primary mb-3" style="max-width: 20rem;">
+            <div class="card-header">Data protection</div>
+            <div class="card-body">
+                @if (TAndCCount == 0)
                 {
-                    <div>
-                        <label for="exampleInputEmail1" class="form-label mt-4">Email address</label>
-                        <input type="email" class="form-control" id="exampleInputEmail1" aria-describedby="emailHelp" placeholder="Enter email" @bind="email.email">
-                        <small id="emailHelp" class="form-text text-muted">We'll never share your email with anyone else.</small>
+                    <h4 class="card-title">Storing your data</h4>
+                    <p class="card-text">We only keep data that is used by the application. We do not sell or share your data.</p>
+                    <p class="card-text">For example, we collect your email address for two purposes:</p>
+                    <p class="card-text">One: To verify that you are not a bot.</p>
+                    <p class="card-text">Two: To send you notifications as part of the alert system for this platform.</p>
+                    <p class="card-text">You can opt in or out of this at any time, but doing so may limit the functionality of the platform.</p>
+                    <div class="mt-3 d-flex justify-content-center">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="flexSwitchCheckDefault" @bind="emailOptIn">
+                            <label class="form-check-label" for="flexSwitchCheckDefault">Opt in/out</label>
+                        </div>
+                    </div>
+                    <div class="mt-3 d-flex justify-content-center">
+                        @if (emailOptIn)
+                        {
+                            <div>
+                                <label for="exampleInputEmail1" class="form-label mt-4">Email address</label>
+                                <input type="email" class="form-control" id="exampleInputEmail1" aria-describedby="emailHelp" placeholder="Enter email" @bind="email.email">
+                                <small id="emailHelp" class="form-text text-muted">We'll never share your email with anyone else.</small>
+                            </div>
+                        }
+                    </div>
+                    <div class="mt-3 d-flex justify-content-center">
+                        <button type="button" class="btn btn-secondary" @onclick="SkipEmailOptIn">Skip</button>
                     </div>
                 }
+                else
+                {
+                    <h4 class="card-title">Rules and conditions</h4>
+                    <p class="card-text">We use a vetting system to make sure you are who you say you are.</p>
+                    <p class="card-text">This means you won’t be able to contact anyone until another user has vetted you.</p>
+                    <p class="card-text">If you don’t know anyone on this platform, please contact me on Discord at:</p>
+                    <p class="card-text">maddibailey (Discord tag TBC)</p>
+                    <div class="mt-3 d-flex justify-content-center">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="flexSwitchCheckDefault" @bind="acceptRules">
+                            <label class="form-check-label" for="flexSwitchCheckDefault">Opt in/out</label>
+                        </div>
+                    </div>
+                    <div class="container d-flex justify-content-center align-items-center">
+                        <button type="button" class="btn btn-secondary" @onclick="NextPage">Next</button>
+                    </div>
+                }
+
             </div>
         </div>
     </div>
-</div>
-<div class="container d-flex justify-content-center align-items-center">
-    <div class="card border-primary mb-3" style="max-width: 20rem;">
-        <div class="card-header">Rules</div>
-        <div class="card-body">
-            <h4 class="card-title">Rules and conditions</h4>
-            <p class="card-text">We use a vetting system to make sure you are who you say you are.</p>
-            <p class="card-text">What this means is you wont be able to contact anyone until another user has vetted you.</p>
-            <p class="card-text">If you do not know anyone on this platform please contact me at:</p>
-            <p class="card-text">maddibailey On discord  TBC</p>
-            <div class="mt-3 d-flex justify-content-center">
-                <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" id="flexSwitchCheckDefault" @bind="acceptRules">
-                    <label class="form-check-label" for="flexSwitchCheckDefault">Opt in/out</label>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-<div class="container d-flex justify-content-center align-items-center">
-    <button type="button" class="btn btn-secondary" @onclick="NextPage">Next</button>
-</div>
+}
+
+
 @code {
     private bool emailOptIn = false;
     private bool acceptRules = false;
+    private int TAndCCount = 0;
+
+    private bool isLoading = false;
+    private double loadingPercentage = 0;
+
     private Email email;
 
     protected override async Task OnInitializedAsync()
@@ -71,9 +88,12 @@
 
     private async void NextPage()
     {
+        isLoading = true;
+        StateHasChanged();
+
         jwtToken token = await _jwtHelper.GetJWTToken();
         UserOptIn userOptIns = new UserOptIn();
-        
+
         email.add = emailOptIn;
 
         userOptIns.optInType = 1;
@@ -81,10 +101,20 @@
         _Http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.token);
         var response = await _Http.PostAsJsonAsync<UserOptIn>("api/UserOptIns/UserOptIn", userOptIns);
 
+        loadingPercentage += 33;
+        StateHasChanged();
+
         if (emailOptIn)
         {
             _Http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.token);
             response = await _Http.PostAsJsonAsync<Email>("api/UserInfo/AddRemoveEmail", email);
+            loadingPercentage += 33;
+            StateHasChanged();
+        }
+        else
+        {
+            loadingPercentage += 33;
+            StateHasChanged();
         }
 
         userOptIns.optInType = 2;
@@ -92,6 +122,14 @@
         _Http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.token);
         response = await _Http.PostAsJsonAsync<UserOptIn>("api/UserOptIns/UserOptIn", userOptIns);
 
+        loadingPercentage += 33;
+        StateHasChanged();
+
         _NavigationManager.NavigateTo("/How_to_use");
+    }
+
+    private async void SkipEmailOptIn()
+    {
+        TAndCCount += 1;
     }
 }

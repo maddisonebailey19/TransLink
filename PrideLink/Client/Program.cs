@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using PrideLink.Client;
 using PrideLink.Client.Helpers;
+using System.Net.NetworkInformation;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
@@ -15,5 +16,5 @@ builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("https:/
 #endif
 
 builder.Services.AddScoped<jwtHelper>();
-
+builder.Services.AddSingleton<LoginStatus>();
 await builder.Build().RunAsync();

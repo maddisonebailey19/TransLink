@@ -1,15 +1,78 @@
-﻿<style>
+﻿@using PrideLink.Client.Helpers
+@using PrideLink.Shared.LoginDetails
+@using System.Net.Http.Headers
 
+@inject HttpClient _Http
+@inject IJSRuntime JSRuntime
+@inject jwtHelper _jwt_helper
+@inject LoginStatus _loginStatus
+
+<style>
+    .account-divider {
+        border: 0;
+        border-top: 1px solid #000; /* black line */
+        margin: 0.5rem 0; /* spacing above and below */
+        /* inset to align with nav item text and icons */
+        margin-left: 1.5rem; /* same as the nav-link padding */
+        margin-right: 0.5rem; /* optional, keep some spacing on the right */
+    }
+
+    .blue-toggle {
+        background-color: #cce5ff !important; /* soft pastel blue */
+        border-color: #cce5ff !important;
+        transition: background-color 0.2s ease;
+    }
+
+        .blue-toggle:hover {
+            background-color: #99ccff !important; /* slightly deeper on hover */
+        }
+
+    .app-navbar {
+        height: 56px;
+        min-height: 56px;
+    }
+
+        .app-navbar .navbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.25rem 0.75rem;
+            white-space: nowrap;
+            overflow: visible; /* allow brand content to be visible */
+        }
+
+            .app-navbar .navbar-brand img {
+                height: 40px;
+                width: auto;
+                object-fit: contain;
+                display: inline-block;
+            }
+
+        .app-navbar .brand-text {
+            color: #ffffff;
+            font-weight: 600;
+            font-size: 1.05rem;
+            line-height: 1;
+            margin: 0;
+        }
+
+        /* ensure toggler doesn't overlap brand on narrow screens */
+        .app-navbar .navbar-toggler {
+            margin-left: auto;
+            z-index: 20;
+        }
 </style>
 
-
-<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">
-            TransLink
-            <img src="TransBanner.png" alt="Logo" style="height: 30px;" class="d-inline-block align-text-bottom" />
+<div class="top-row ps-3 navbar navbar-dark bg-dark app-navbar">
+    <div class="container-fluid d-flex align-items-center">
+        <a class="navbar-brand" href="/">
+            
         </a>
-        <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
+
+        <button title="Navigation menu"
+                class="navbar-toggler blue-toggle"
+                @onclick="ToggleNavMenu"
+                aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
     </div>
@@ -28,6 +91,14 @@
 
 <div class="@NavMenuCssClass nav-scrollable" @onclick="ToggleNavMenu">
     <nav class="flex-column">
+        <div class="nav-item px-3">
+            <div class="nav-link disabled-link">
+                <span class="oi oi-person" aria-hidden="true"></span>
+                Account: <span class="account-status">@verifiedStatus</span>
+            </div>
+            <hr class="account-divider" />
+        </div>
+
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
                 <span class="oi oi-home" aria-hidden="true"></span> Home
@@ -55,6 +126,12 @@
             @if (settingsSubmenu)
             {
                 <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="ProfileSettings" @onclick="HideSettingsSubMenu">
+                        @*TODO change to correct page*@
+                        <span class="oi oi-dashboard" aria-hidden="true"></span> Profile Settings
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
                     <NavLink class="nav-link" href="AccountSettings" @onclick="HideSettingsSubMenu">
                         @*TODO change to correct page*@
                         <span class="oi oi-dashboard" aria-hidden="true"></span> Account Settings
@@ -78,10 +155,53 @@
 </div>
 
 @code {
+    private string? verifiedStatus = "";
+    private jwtToken? token;
+
     private bool collapseNavMenu = true;
     private bool settingsSubmenu = false;
 
     private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _loginStatus.OnChange += async () => await RefreshVerificationStatus();
+        await RefreshVerificationStatus();
+    }
+
+    private async Task RefreshVerificationStatus()
+    {
+        token = await _jwt_helper.GetJWTToken();
+        Console.WriteLine("2 Token is: " + token);
+
+        if (token != null)
+        {
+            Console.WriteLine("Token accepted");
+            _Http.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", token.token);
+
+            var response = await _Http.GetAsync("api/General/UserVerificationStatus");
+
+            if (response.IsSuccessStatusCode)
+            {
+                verifiedStatus = await response.Content.ReadAsStringAsync();
+            }
+            else
+            {
+                verifiedStatus = "Unable to verify user";
+            }
+
+            StateHasChanged();
+        }
+        else
+        {
+            Console.WriteLine("Token declined");
+            verifiedStatus = "";
+        }
+
+        Console.WriteLine("error");
+    }
+
     private void ShowSettingsSubMenu()
     {
         settingsSubmenu = !settingsSubmenu; 

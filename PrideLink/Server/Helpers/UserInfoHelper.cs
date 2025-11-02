@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Http.HttpResults;
+using PrideLink.Server.Controllers;
 using PrideLink.Server.Interfaces;
-using PrideLink.Server.TransLinkDataBase;
 using PrideLink.Server.Internal_Models;
+using PrideLink.Server.TransLinkDataBase;
+using PrideLink.Shared.FreindFinderDetails;
 using PrideLink.Shared.General;
 using PrideLink.Shared.UserInfo;
 using System.Linq.Expressions;
@@ -113,7 +115,6 @@ namespace PrideLink.Server.Helpers
                 return picture;
             }
         }
-
         public UserRelationshipStatusData? GetUserRelationshipStatus(int userNo)
         {
             UserRelationshipStatusData? userRelationshipStatus = new UserRelationshipStatusData();
@@ -194,7 +195,6 @@ namespace PrideLink.Server.Helpers
             //}
             //return false;
         }
-
         public bool AddUserBioDescription(UserBioDescriptionData bioDescription, int userNo)
         {
             GeneralConfigurationValues generalConfigurationValues = new GeneralConfigurationValues();
@@ -252,7 +252,6 @@ namespace PrideLink.Server.Helpers
                 
             }
         }
-
         public bool AddUserAge(Age age, int userNo)
         {
             GeneralConfigurationValues generalConfigurationValues = new GeneralConfigurationValues();
@@ -297,7 +296,6 @@ namespace PrideLink.Server.Helpers
                 }
             }
         }
-
         public bool AddUserHobbies(List<Hobbys> hobbys, int userNo)
         {
             bool successfulRemoval = RemoveAllHobbiesFromUser(hobbys, userNo);
@@ -366,7 +364,6 @@ namespace PrideLink.Server.Helpers
                 
             }
         }
-
         public bool AddUserName(DisplayName display, int userNo)
         {
             GeneralConfigurationValues generalConfigurationValues = new GeneralConfigurationValues();
@@ -414,7 +411,6 @@ namespace PrideLink.Server.Helpers
                 }
             }
         }
-
         public bool AddUpdateUserSocial(UserSocial userSocial, int userNo)
         {
             GeneralConfigurationValues generalConfigurationValues = new GeneralConfigurationValues();
@@ -488,6 +484,122 @@ namespace PrideLink.Server.Helpers
                     return null;
                 }
 
+            }
+        }
+        public string GetUserVerificationStatus(int userNo)
+        {
+            using (var context = new MasContext())
+            {
+                TblUser user = context.TblUsers.FirstOrDefault(e => e.UserNo == userNo);
+
+                if(user != null)
+                {
+                    switch (user.UserType)
+                    {
+                        case 2:
+                            return "Verified";
+                        case 3:
+                            return "Unverified";
+                        default:
+                            return "Unverified";
+                    }
+                }
+                else
+                {
+                    return "Unverified";
+                }
+            }
+        }
+        public List<UserAccountGeneralInfo> GetUserAccountGeneralInfo(List<int> userNos)
+        {
+            List<UserAccountGeneralInfo> userAccountGeneralInfos = new List<UserAccountGeneralInfo>();
+
+            using (var context = new MasContext())
+            {
+                List<TblGeneralConfiguration> generalConfigurationsType3 = context.TblGeneralConfigurations.Where(e => e.TypeNo == 3).ToList();
+                List<TblUser> users = context.TblUsers.Where(e => e.Active == true).ToList();
+
+                foreach (int userNo in userNos)
+                {
+                    UserAccountGeneralInfo userAccountGeneralInfo = new UserAccountGeneralInfo();
+
+                    TblUser user = users.FirstOrDefault(e => e.UserNo == userNo);
+                    TblGeneralConfiguration generalConfigurationType3 = generalConfigurationsType3.FirstOrDefault(e => e.UserNo == userNo);
+                    if (generalConfigurationType3 != null)
+                    {
+                        string userVerified;
+                        switch (user.UserType)
+                        {
+                            case 2:
+                                userVerified = "Verified";
+                                break;
+                            case 3:
+                                userVerified = "Unverified";
+                                break;
+                            default:
+                                userVerified = "Unverified";
+                                break;
+                        }
+
+                        userAccountGeneralInfo.DisplayName = generalConfigurationType3.Ref2;
+                        userAccountGeneralInfo.BioDescription = generalConfigurationType3.Ref1;
+                        userAccountGeneralInfo.Age = generalConfigurationType3.Ref3;
+                        userAccountGeneralInfo.UserVerified = userVerified;
+
+                        userAccountGeneralInfos.Add(userAccountGeneralInfo);
+                    }
+
+                }
+            }
+            return userAccountGeneralInfos;
+        }
+        public List<UserAccountRelashionshipStatus> GetUserAccountRelashionshipStatus(List<int> userNos)
+        {
+            throw new NotImplementedException();
+        }
+
+        public List<TblGeneralConfiguration> GetUserGeneralConfiguration(List<int> userNos)
+        {
+            using (var context = new MasContext())
+            {
+                List<TblGeneralConfiguration> tblGeneralConfigurations = context.TblGeneralConfigurations.Where(e => userNos.Contains(e.UserNo)).ToList();
+                return tblGeneralConfigurations;
+            }
+        }
+
+        public List<TblUser> GetTblUsers(List<int> userNos)
+        {
+            using (var context = new MasContext())
+            {
+                List<TblUser> tblUsers = context.TblUsers.Where(e => userNos.Contains(e.UserNo)).ToList();
+                return tblUsers;
+            }
+        }
+
+        public List<TblHobbyUserMappingTable> GetUserHobbyUserMappingTable(List<int> userNos)
+        {
+            using (var context = new MasContext())
+            {
+                List<TblHobbyUserMappingTable> tblHobbyUserMappingTables = context.TblHobbyUserMappingTables.Where(e => userNos.Contains(e.UserNo)).ToList();
+                return tblHobbyUserMappingTables;
+            }
+        }
+
+        public List<TblHobby> GetUserHobbies()
+        {
+            using (var context = new MasContext())
+            {
+                List<TblHobby> tblHobbies = context.TblHobbies.ToList();
+                return tblHobbies;
+            }
+        }
+
+        public List<TblRelationshipStatusType> GetUserRelationshipStatusTypes()
+        {
+            using(var context = new MasContext())
+            {
+                List<TblRelationshipStatusType> tblRelationshipStatusTypes = context.TblRelationshipStatusTypes.ToList();
+                return tblRelationshipStatusTypes;
             }
         }
 
@@ -581,6 +693,6 @@ namespace PrideLink.Server.Helpers
         //    }
         //}
 
-        
+
     }
 }

@@ -1,111 +1,165 @@
-﻿function initializeMap() {
-    mapboxgl.accessToken = 'pk.eyJ1IjoicHJpZGVsaW5rIiwiYSI6ImNtMXhmdG1tdzB2Y20yanM1cXk1Mnc5MTkifQ.Zg_IyPxoqhldr72RyPiJZQ';
+﻿// Mapbox helper that waits for style to be loaded before adding sources/layers.
+// Keeps a pendingGeojson so updateHeatmap can be called anytime.
+window._mapInstance = window._mapInstance || null;
+window._pendingGeojson = null;
 
-    const map = new mapboxgl.Map({
-        container: 'map', // Your map container
-        style: 'mapbox://styles/mapbox/light-v10',
-        center: [-1.2965, 52.6282], // Default position in [longitude, latitude]
-        zoom: 12
-    });
+function initializeMap(jsonData) {
+    console.log('initializeMap called');
 
-    // Get user's current location
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                const userLongitude = position.coords.longitude;
-                const userLatitude = position.coords.latitude;
-                console.log(userLongitude + "," + userLatitude)
-                // Center the map on the user's current location
-                map.setCenter([userLongitude, userLatitude]);
-                map.setZoom(12); // Set zoom level as needed
+    // create the map once
+    if (!window._mapInstance) {
+        mapboxgl.accessToken = 'pk.eyJ1IjoicHJpZGVsaW5rIiwiYSI6ImNtMXhmdG1tdzB2Y20yanM1cXk1Mnc5MTkifQ.Zg_IyPxoqhldr72RyPiJZQ';
+        window._mapInstance = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/mapbox/light-v10',
+            center: [1.212912, 52.6282],
+            zoom: 12
+        });
 
-                // Optional: Add a marker for the user's location
-                new mapboxgl.Marker()
-                    .setLngLat([userLongitude, userLatitude])
-                    .setPopup(new mapboxgl.Popup().setHTML('<h4>You are here!</h4>')) // Add popup if needed
-                    .addTo(map);
-            },
-            (error) => {
-                console.error('Error getting location', error);
-                // Optionally handle errors (e.g., permission denied)
+        // on load create the source and layers (if pending data exists it will be applied)
+        window._mapInstance.on('load', () => {
+            console.log('map load event fired');
+            // create empty source
+            if (!window._mapInstance.getSource('heatmap-data')) {
+                window._mapInstance.addSource('heatmap-data', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
             }
-        );
-    } else {
-        console.log('Geolocation is not supported by this browser.');
+
+            // add heatmap layer if not exists
+            if (!window._mapInstance.getLayer('heatmap')) {
+                window._mapInstance.addLayer({
+                    id: 'heatmap',
+                    type: 'heatmap',
+                    source: 'heatmap-data',
+                    maxzoom: 15,
+                    paint: {
+                        'heatmap-weight': ['interpolate', ['linear'], ['get', 'intensity'], 0, 0, 1, 1],
+                        'heatmap-color': [
+                            'interpolate',
+                            ['linear'],
+                            ['heatmap-density'],
+                            0, 'rgba(33,102,172,0)',
+                            0.2, 'rgba(103,169,207,0.5)',
+                            0.4, 'rgba(209,229,240,0.8)',
+                            0.6, 'rgba(253,219,199,0.9)',
+                            1, 'rgba(239,138,98,1)'
+                        ],
+                        'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 0, 2, 11, 15, 15, 20],
+                        'heatmap-opacity': 0.8
+                    }
+                });
+            }
+
+            // add points layer for clicks
+            if (!window._mapInstance.getLayer('points')) {
+                window._mapInstance.addLayer({
+                    id: 'points',
+                    type: 'circle',
+                    source: 'heatmap-data',
+                    paint: {
+                        'circle-radius': 6,
+                        'circle-color': 'rgba(0,0,0,0.7)',
+                        'circle-stroke-color': '#fff',
+                        'circle-stroke-width': 1
+                    }
+                });
+
+                window._mapInstance.on('click', 'points', (e) => {
+                    const coords = e.features[0].geometry.coordinates.slice();
+                    const props = e.features[0].properties || {};
+                    new mapboxgl.Popup().setLngLat(coords).setHTML(`<div>${props.description || ''}</div>`).addTo(window._mapInstance);
+                });
+                window._mapInstance.on('mouseenter', 'points', () => { window._mapInstance.getCanvas().style.cursor = 'pointer'; });
+                window._mapInstance.on('mouseleave', 'points', () => { window._mapInstance.getCanvas().style.cursor = ''; });
+            }
+
+            // If there's pending data (updateHeatmap was called before load), apply it now
+            if (window._pendingGeojson) {
+                try {
+                    const src = window._mapInstance.getSource('heatmap-data');
+                    if (src) src.setData(window._pendingGeojson);
+                    window._pendingGeojson = null;
+                } catch (err) {
+                    console.error('Failed to set pending geojson on load:', err);
+                }
+            }
+        });
     }
 
-    const heatmapData = [
-        [-1.2965, 52.6282, 0.7], // City center
-        [-1.2950, 52.6315, 1.0], // Near Norwich Cathedral
-        [-1.3060, 52.6282, 0.8], // Near the University of East Anglia
-        [-1.2955, 52.6290, 0.6], // Near Norwich Market
-        [-1.2975, 52.6350, 0.5], // Near Eaton Park
-        [-1.2972, 52.6243, 0.4], // Near Mousehold Heath
-        [-1.2941, 52.6321, 0.3], // Near Chapelfield Gardens
-        [-1.2954, 52.6314, 0.9], // Near The Forum
-        [-1.3032, 52.6315, 0.5], // Near Whittlingham Country Park
-        [-1.3055, 52.6222, 0.2], // Near Earlham Cemetery
-        [-1.2958, 52.6340, 0.8], // Near Norwich Train Station
-        [-1.2963, 52.6285, 0.6], // Near the Arts Centre
-        [-1.2905, 52.6300, 0.4]  // Near St. Stephen's Street
-    ];
+    // Always delegate to updateHeatmap which handles style/not-loaded logic
+    updateHeatmap(jsonData);
+}
 
-    // Create GeoJSON data structure
-    const geojson = {
-        type: 'FeatureCollection',
-        features: heatmapData.map(point => ({
-            type: 'Feature',
-            geometry: {
-                type: 'Point',
-                coordinates: [point[0], point[1]],
-            },
-            properties: {
-                intensity: point[2] // Use normalized intensity
-            }
-        }))
-    };
+function updateHeatmap(jsonData) {
+    console.log('updateHeatmap called');
 
-    // Load the map
-    map.on('load', function () {
-        // Add a new source for the heatmap
-        map.addSource('heatmap-data', {
-            type: 'geojson',
-            data: geojson,
-        });
+    let points = [];
+    try {
+        if (jsonData) points = JSON.parse(jsonData);
+    } catch (err) {
+        console.error('Failed to parse heatmap jsonData', err);
+        points = [];
+    }
 
-        // Add the heatmap layer
-        map.addLayer({
-            id: 'heatmap',
-            type: 'heatmap',
-            source: 'heatmap-data',
-            maxzoom: 15,
-            paint: {
-                'heatmap-weight': [
-                    'interpolate',
-                    ['linear'],
-                    ['get', 'intensity'],
-                    0, 0,
-                    1, 1
-                ],
-                'heatmap-color': [
-                    'interpolate',
-                    ['linear'],
-                    ['heatmap-density'],
-                    0, 'rgba(33,102,172,0)',
-                    0.2, 'rgba(103,169,207,0.5)',
-                    0.4, 'rgba(209,229,240,0.8)',
-                    0.6, 'rgba(253,219,199,0.9)',
-                    1, 'rgba(239,138,98,1)'
-                ],
-                'heatmap-radius': {
-                    'base': 2,
-                    'stops': [
-                        [11, 15],
-                        [15, 20]
-                    ]
-                },
-                'heatmap-opacity': 0.8
-            }
-        });
-    });
+    // normalize to GeoJSON features
+    const features = (points || []).map(p => {
+        if (Array.isArray(p)) {
+            const lng = Number(p[0]);
+            const lat = Number(p[1]);
+            const intensity = Number(p[2] ?? 0);
+            return {
+                type: 'Feature',
+                geometry: { type: 'Point', coordinates: [lng, lat] },
+                properties: { intensity: Math.max(0, Math.min(1, intensity)), description: '' }
+            };
+        } else {
+            const lng = Number(p.Longitude ?? p.longitude ?? p.Lng ?? p.lng);
+            const lat = Number(p.Latitude ?? p.latitude ?? p.Lat ?? p.lat);
+            const intensity = Number(p.Intensity ?? p.intensity ?? 0);
+            return {
+                type: 'Feature',
+                geometry: { type: 'Point', coordinates: [lng, lat] },
+                properties: { intensity: Math.max(0, Math.min(1, intensity)), description: p.Description ?? p.description ?? '' }
+            };
+        }
+    }).filter(f => Number.isFinite(f.geometry.coordinates[0]) && Number.isFinite(f.geometry.coordinates[1]));
+
+    const geojson = { type: 'FeatureCollection', features: features };
+    console.log('Prepared GeoJSON features:', geojson.features.length);
+
+    if (!window._mapInstance) {
+        console.warn('Map instance not initialized yet - storing pending data and calling initializeMap');
+        window._pendingGeojson = geojson;
+        initializeMap(JSON.stringify(points));
+        return;
+    }
+
+    // If style isn't loaded yet, store pending and wait for load handler
+    if (!window._mapInstance.isStyleLoaded || !window._mapInstance.isStyleLoaded()) {
+        console.warn('Map style not loaded yet - queuing geojson');
+        window._pendingGeojson = geojson;
+        return;
+    }
+
+    // style is loaded and source should exist (created in load handler), update or add as needed
+    try {
+        const src = window._mapInstance.getSource('heatmap-data');
+        if (src) {
+            src.setData(geojson);
+        } else {
+            window._mapInstance.addSource('heatmap-data', { type: 'geojson', data: geojson });
+        }
+
+        if (geojson.features.length) {
+            const bounds = geojson.features.reduce((b, f) => b.extend(f.geometry.coordinates), new mapboxgl.LngLatBounds(geojson.features[0].geometry.coordinates, geojson.features[0].geometry.coordinates));
+            window._mapInstance.fitBounds(bounds, { padding: 40, maxZoom: 14 });
+        } else {
+            console.log('No features - heatmap cleared');
+        }
+
+        window._mapInstance.resize();
+    } catch (err) {
+        console.error('Error updating heatmap source:', err);
+        // fallback: queue pending and let load handler apply it
+        window._pendingGeojson = geojson;
+    }
 }

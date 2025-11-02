@@ -22,5 +22,49 @@ namespace PrideLink.Server.Helpers
                 return hobbys;
             }
         }
+
+        public void UpdateVerificationStatus(int userNo, string UserTypeName)
+        {
+            using (var context = new MasContext())
+            {
+                TblUser user = context.TblUsers.FirstOrDefault(e => e.UserNo == userNo);
+                int UserTypeNo;
+                switch (UserTypeName)
+                {
+                    case "Verified":
+                        UserTypeNo = 2;
+                        break;
+                    case "Unverified":
+                        UserTypeNo = 3;
+                        break;
+                    default:
+                        UserTypeNo = 3;
+                        break;
+                }
+                user.UserType = UserTypeNo;
+                context.SaveChanges();
+            }
+        }
+
+        public string? UserVerificationStatus(int userNo)
+        {
+            using (var context = new MasContext())
+            {
+                int? userType = context.TblUsers.FirstOrDefault(e => e.UserNo == userNo).UserType;
+                if (userType != null)
+                {
+                    switch (userType)
+                    {
+                        case 1:
+                            return "System";
+                        case 2:
+                            return "Verified";
+                        case 3:
+                            return "Unverified";
+                    }
+                }
+            }
+            return null;
+        }
     }
 }

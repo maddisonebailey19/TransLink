@@ -30,88 +30,191 @@
         background-color: #f8f9fa; /* Light background color */
     }
 </style>
-@if (isLoading)
+@if (showPopup)
 {
-    <LoadingView Percentage="loadingPercentage" LoadingText="Loading, please wait..." />
+    <div class="modal-backdrop fade show"></div>
+    <div class="modal d-block" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-info text-dark">
+                    <h5 class="modal-title">Verification Request</h5>
+                </div>
+                <div class="modal-body">
+                    <p>Do you want to verify user <strong>@selectedUserName</strong>?</p>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @onclick="Deny">Cancel</button>
+                    <button class="btn btn-primary" @onclick="Allow">Verify</button>
+                </div>
+            </div>
+        </div>
+    </div>
 }
 else
 {
-    @foreach (UserFreindFinderAccount finderAccount in userFreindFinderAccounts)
+    @if (isLoading)
     {
-        <div class="card mb-3">
-            <h3 class="card-header">@finderAccount.UserAccountGeneralInfo.DisplayName</h3>
-            <div class="card-body">
-                <h5 class="card-title">Age: @finderAccount.UserAccountGeneralInfo.Age</h5>
-                <h6 class="card-subtitle text-muted">@cardSubtitle</h6>
-            </div>
-            <div class="scrollable-images-container">
-                @foreach (var base64Image in finderAccount.UserAccountPictures)
-                {
-                    if (base64Image.base64Image != null)
-                    {
-                        <img src="@base64Image.base64Image" class="card-image" alt="Image" />
-                    }
-                }
-            </div>
-            <div class="card-body">
-                <h4>About me</h4>
-                <div class="card-image custom-box">
-                    <p class="card-text">@finderAccount.UserAccountGeneralInfo.BioDescription</p>
-                </div>
-            </div>
-
-            <div class="accordion" id="accordionExample_@finderAccount.userNo">
-                <div class="accordion-item">
-                    <h2 class="accordion-header" id="@finderAccount.userNo+_hobbies">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseHobbies_@finderAccount.userNo" aria-expanded="false" aria-controls="collapseHobbies_@finderAccount.userNo">
-                            Hobbies
-                        </button>
-                    </h2>
-                    <div id="collapseHobbies_@finderAccount.userNo" class="accordion-collapse collapse" aria-labelledby="@finderAccount.userNo+_hobbies" data-bs-parent="#accordionExample_@finderAccount.userNo">
-                        <div class="accordion-body">
-                            @foreach (UserAccountHobbies userAccountHobbies in finderAccount.UserAccountHobbies)
-                            {
-                                <button type="button" class="btn btn-primary rounded-pill" disabled="@true" style="margin-right: 10px; margin-top: 10px">@userAccountHobbies.HobbyName</button>
-                            }
-                        </div>
+        <LoadingView Percentage="loadingPercentage" LoadingText="Loading, please wait..." CurrentStepText="@currentStep" />
+    }
+    else
+    {
+        if (!userIsVerified)
+        {
+            <div class="container d-flex justify-content-center align-items-center">
+                <div class="card border-primary mb-3 " style="max-width: 20rem;">
+                    <div class="card-header">User is unverified</div>
+                    <div class="card-body">
+                        <h4 class="card-title">Why cant I see other accounts:</h4>
+                        <p class="card-text">As part of this platform a key feature is safety.Until you are verified you will be unable to view other accounts.</p>
+                        <h4 class="card-title">What can you do to get verified:</h4>
+                        <p class="card-text">If a freind referred you they can verify who you are. If your new and dont know anyone you can contact me on discord</p>
+                        <a href="https://discordapp.com/users/maddibailey" target="_blank"
+                           class="form-control text-primary">maddibailey</a>
                     </div>
                 </div>
+            </div>
+        }
+        else
+        {
+            @foreach (UserFreindFinderAccount finderAccount in userFreindFinderAccounts)
+            {
+                <div class="card mb-3">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h3 class="mb-0">@finderAccount.UserAccountGeneralInfo.DisplayName</h3>
+                        @if (userAllowedToVerify && @finderAccount.UserAccountGeneralInfo.UserVerified == "Unverified")
+                        {
+                            <span class="badge bg-secondary text-dark text-decoration-none"
+                                  style="cursor: pointer;"
+                                  @onclick="() => ShowVerifyPopup(finderAccount.userNo)">
+                                @finderAccount.UserAccountGeneralInfo.UserVerified
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-info text-light">
+                                @finderAccount.UserAccountGeneralInfo.UserVerified
+                            </span>
+                        }
+                    </div>
+                    <div class="scrollable-images-container">
+                        @foreach (var base64Image in finderAccount.UserAccountPictures)
+                        {
+                            if (base64Image.base64Image != null)
+                            {
+                                <img src="@base64Image.base64Image" class="card-image" alt="Image" />
+                            }
+                        }
+                    </div>
+                    <div class="card-body">
+                        <h4>About me</h4>
+                        <div class="card-image custom-box">
+                            <p class="card-text">@finderAccount.UserAccountGeneralInfo.BioDescription</p>
+                        </div>
+                    </div>
 
-                <div class="accordion-item">
-                    <h2 class="accordion-header" id="@finderAccount.userNo+_socials">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSocials_@finderAccount.userNo" aria-expanded="false" aria-controls="collapseSocials_@finderAccount.userNo">
-                            Socials
-                        </button>
-                    </h2>
-                    <div id="collapseSocials_@finderAccount.userNo" class="accordion-collapse collapse" aria-labelledby="@finderAccount.userNo+_socials" data-bs-parent="#accordionExample_@finderAccount.userNo">
-                        <div class="accordion-body">
-                            <div>
-                                <label for="instagram_@finderAccount.userNo" class="form-label mt-4">Instagram</label>
-                                <input type="text" class="form-control" id="instagram_@finderAccount.userNo" placeholder="Instagram" @bind="finderAccount.UserAccountSocials.FirstOrDefault(e => e.socialTypeNo == 1).socialValue">
+                    <div class="accordion" id="accordionExample_@finderAccount.userNo">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="@finderAccount.userNo+_hobbies">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseHobbies_@finderAccount.userNo" aria-expanded="false" aria-controls="collapseHobbies_@finderAccount.userNo">
+                                    Hobbies
+                                </button>
+                            </h2>
+                            <div id="collapseHobbies_@finderAccount.userNo" class="accordion-collapse collapse" aria-labelledby="@finderAccount.userNo+_hobbies" data-bs-parent="#accordionExample_@finderAccount.userNo">
+                                <div class="accordion-body">
+                                    @foreach (UserAccountHobbies userAccountHobbies in finderAccount.UserAccountHobbies)
+                                    {
+                                        <button type="button" class="btn btn-primary rounded-pill" disabled="@true" style="margin-right: 10px; margin-top: 10px">@userAccountHobbies.HobbyName</button>
+                                    }
+                                </div>
+                            </div>
+                        </div>
 
-                                <label for="snapchat_@finderAccount.userNo" class="form-label mt-4">Snapchat</label>
-                                <input type="text" class="form-control" id="snapchat_@finderAccount.userNo" placeholder="Snapchat" @bind="finderAccount.UserAccountSocials.FirstOrDefault(e => e.socialTypeNo == 2).socialValue">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="@finderAccount.userNo+_socials">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSocials_@finderAccount.userNo" aria-expanded="false" aria-controls="collapseSocials_@finderAccount.userNo">
+                                    Socials
+                                </button>
+                            </h2>
+                            <div id="collapseSocials_@finderAccount.userNo"
+                                 class="accordion-collapse collapse"
+                                 aria-labelledby="@finderAccount.userNo+_socials"
+                                 data-bs-parent="#accordionExample_@finderAccount.userNo">
+                                <div class="accordion-body">
+                                    @{
+                                        var instagram = finderAccount.UserAccountSocials.FirstOrDefault(e => e.socialTypeNo == 1)?.socialValue;
+                                        var snapchat = finderAccount.UserAccountSocials.FirstOrDefault(e => e.socialTypeNo == 2)?.socialValue;
+                                        var whatsapp = finderAccount.UserAccountSocials.FirstOrDefault(e => e.socialTypeNo == 3)?.socialValue;
+                                        var discord = finderAccount.UserAccountSocials.FirstOrDefault(e => e.socialTypeNo == 4)?.socialValue;
+                                    }
 
-                                <label for="whatsapp_@finderAccount.userNo" class="form-label mt-4">WhatsApp</label>
-                                <input type="text" class="form-control" id="whatsapp_@finderAccount.userNo" placeholder="WhatsApp" @bind="finderAccount.UserAccountSocials.FirstOrDefault(e => e.socialTypeNo == 3).socialValue">
+                                    <label class="form-label mt-4">Instagram</label>
+                                    @if (!string.IsNullOrWhiteSpace(instagram))
+                                    {
+                                        <a href="https://instagram.com/@(instagram)" target="_blank"
+                                           class="form-control text-primary">@instagram</a>
+                                    }
+                                    else
+                                    {
+                                        <p class="form-text text-muted">No Instagram linked</p>
+                                    }
 
-                                <label for="discord_@finderAccount.userNo" class="form-label mt-4">Discord</label>
-                                <input type="text" class="form-control" id="discord_@finderAccount.userNo" placeholder="Discord" @bind="finderAccount.UserAccountSocials.FirstOrDefault(e => e.socialTypeNo == 4).socialValue">
+                                    <label class="form-label mt-4">Snapchat</label>
+                                    @if (!string.IsNullOrWhiteSpace(snapchat))
+                                    {
+                                        <a href="https://snapchat.com/add/@(snapchat)" target="_blank"
+                                           class="form-control text-primary">@snapchat</a>
+                                    }
+                                    else
+                                    {
+                                        <p class="form-text text-muted">No Snapchat linked</p>
+                                    }
+
+                                    <label class="form-label mt-4">WhatsApp</label>
+                                    @if (!string.IsNullOrWhiteSpace(whatsapp))
+                                    {
+                                        <a href="https://wa.me/@(whatsapp)" target="_blank"
+                                           class="form-control text-primary">@whatsapp</a>
+                                    }
+                                    else
+                                    {
+                                        <p class="form-text text-muted">No WhatsApp linked</p>
+                                    }
+
+                                    <label class="form-label mt-4">Discord</label>
+                                    @if (!string.IsNullOrWhiteSpace(discord))
+                                    {
+                                        <a href="https://discordapp.com/users/@(discord)" target="_blank"
+                                           class="form-control text-primary">@discord</a>
+                                    }
+                                    else
+                                    {
+                                        <p class="form-text text-muted">No Discord linked</p>
+                                    }
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
 
-        </div>
+                </div>
+            }
+        }
     }
 }
+
 
 
 
 @code {
     private bool isLoading = true;
     private double loadingPercentage = 0;
+    private string currentStep = "...";
+
+    private bool userIsVerified = false;
+    private bool userAllowedToVerify = false;
+
+    private int selectedUserNo;
+    private string selectedUserName;
+    private bool showPopup;
 
     private string cardHeader;
     private string cardTitle;
@@ -127,6 +230,29 @@ else
     private jwtToken? token;
     private UserLocationData userLocationData = new UserLocationData();
     private List<UserFreindFinderAccount> userFreindFinderAccounts = new List<UserFreindFinderAccount>();
+
+    private async Task ShowVerifyPopup(int userNo)
+    {
+        selectedUserNo = userNo;
+        selectedUserName = userFreindFinderAccounts.FirstOrDefault(e => e.userNo == userNo).UserAccountGeneralInfo.DisplayName;
+        showPopup = true;
+    }
+
+    private async Task Deny()
+    {
+        showPopup = false;
+    }
+
+    private async Task Allow()
+    {
+        showPopup = false;
+        var response = await _Http.PatchAsync("/api/General/UpdateVerificationStatus?userNo=" + selectedUserNo + "&userTypeName=Verified", null);
+        if (response.IsSuccessStatusCode)
+        {
+            userFreindFinderAccounts.FirstOrDefault(e => e.userNo == selectedUserNo).UserAccountGeneralInfo.UserVerified = "Verified";
+            StateHasChanged();
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -147,7 +273,7 @@ else
             await JSRuntime.InvokeVoidAsync("console.log", "JWT token: null");
             Console.WriteLine("JWT token: null");
             // If you want to stop initialization when there's no token, uncomment return:
-            // return;
+            return;
         }
         else
         {
@@ -156,26 +282,78 @@ else
             Console.WriteLine($"JWT token: {token.token}, expireDate: {token.expireDate:O}");
         }
 
-        loadingPercentage += 25;
-        StateHasChanged();
+        userIsVerified = (await IsUserVerified());
+        if (userIsVerified)
+        {
+            await UserAllowedToVerify();
 
-        // Step 1: Get location
-        await GetLocation();
-        loadingPercentage += 25;
-        StateHasChanged();
+            loadingPercentage += 25;
+            currentStep = "Getting Location";
+            StateHasChanged();
 
-        // Step 2: Upload user location (guarded)
-        await UploadUserLocation();
-        loadingPercentage += 25;
-        StateHasChanged();
+            // Step 1: Get location
+            await GetLocation();
+            loadingPercentage += 25;
+            currentStep = "Updating Location";
+            StateHasChanged();
 
-        // Step 3: Get user account info (guarded)
-        await GetAllUserAccountInfo();
-        loadingPercentage += 25;
-        StateHasChanged();
+            // Step 2: Upload user location (guarded)
+            await UploadUserLocation();
+            loadingPercentage += 25;
+            currentStep = "Finding you your next freind";
+            StateHasChanged();
 
-        isLoading = false;
-        StateHasChanged();
+            // Step 3: Get user account info (guarded)
+            await GetAllUserAccountInfo();
+            loadingPercentage += 25;
+            StateHasChanged();
+
+            isLoading = false;
+            StateHasChanged();
+        }
+        else
+        {
+            isLoading = false;
+        }
+
+    }
+
+    private async Task UserAllowedToVerify()
+    {
+        _Http.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", token.token);
+        var response = await _Http.GetAsync("api/Login/IsUserInRole/?roleName=Verifier");
+        switch (response.StatusCode)
+        {
+            case System.Net.HttpStatusCode.OK:
+                userAllowedToVerify = true;
+                break;
+            case System.Net.HttpStatusCode.Forbidden:
+                userAllowedToVerify = false;
+                break;
+            default:
+                userAllowedToVerify = false;
+                break;
+        };
+        ;
+    }
+
+    private async Task<bool> IsUserVerified()
+    {
+        _Http.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", token.token);
+
+        var response = await _Http.GetAsync("api/General/UserVerificationStatus");
+        string userStatus = await response.Content.ReadAsStringAsync();
+        switch (userStatus)
+        {
+            case "Verified":
+                return true;
+            case "Unverified":
+                return false;
+            default:
+                return false;
+        };
     }
 
     private async Task GetLocation()

@@ -1,8 +1,10 @@
 ﻿@page "/login"
+@using PrideLink.Client.Helpers
 @using PrideLink.Shared.LoginDetails
 @using System.Text.Json
 @using System.Net
 
+@inject LoginStatus _loginStatus;
 @inject IJSRuntime _JS
 @inject HttpClient _Http
 @inject NavigationManager _Navigation
@@ -70,6 +72,7 @@
             {
                 _Navigation.NavigateTo("/");
             }
+            _loginStatus.NotifyStateChanged();
         }
         else
         {

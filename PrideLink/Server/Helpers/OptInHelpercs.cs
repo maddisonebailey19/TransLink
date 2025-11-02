@@ -12,6 +12,12 @@ namespace PrideLink.Server.Helpers
         {
             _insertIntoGenericReference = insertIntoGenericReference;
         }
+
+        private int convertBoolToInt(bool value)
+        {
+            return value ? 1 : 0;
+        }
+
         public bool UserOptIn(UserOptIn userOptIns, int userNo)
         {
             GeneralConfigurationValues generalConfigurationValues = new GeneralConfigurationValues();
@@ -19,13 +25,13 @@ namespace PrideLink.Server.Helpers
             switch (userOptIns.optInType)
             {
                 case 1:
-                    generalConfigurationValues.Int1 = 1;
+                    generalConfigurationValues.Int1 = convertBoolToInt(userOptIns.isOptedIn);
                     break;
                 case 2:
-                    generalConfigurationValues.Int3 = 1;
+                    generalConfigurationValues.Int3 = convertBoolToInt(userOptIns.isOptedIn);
                     break;
                 case 3:
-                    generalConfigurationValues.Int2 = 1;
+                    generalConfigurationValues.Int2 = convertBoolToInt(userOptIns.isOptedIn);
                     break;
             }
 

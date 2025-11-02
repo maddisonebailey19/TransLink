@@ -6,6 +6,6 @@ namespace PrideLink.Server.Interfaces
 {
     public interface IFreindFinderUserInfoInterface
     {
-        public List<UserFreindFinderAccount> GetAllUserFreindFinderAccounts(UserLocationData location);
+        public List<UserFreindFinderAccount> GetAllUserFreindFinderAccounts(UserLocationData location, List<string> roles);
     }
 }

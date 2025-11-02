@@ -1,12 +1,14 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.ResponseCompression;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.IdentityModel.Tokens;
 using PrideLink.Server.Controllers;
 using PrideLink.Server.Helpers;
 using PrideLink.Server.Interfaces;
-using System.Text;
+using PrideLink.Server.TransLinkDataBase;
 using System;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -64,6 +66,10 @@ builder.Services.AddCors(options =>
             // .AllowCredentials(); // only if you use cookies/credentials - do NOT use with AllowAnyOrigin
     });
 });
+
+builder.Services.AddDbContext<MasContext>(options =>
+    options.UseSqlServer("Server=tcp:maddisonbailey.database.windows.net,1433;Database=MAS;User ID=Maddi;Password=Cobilove19;Trusted_Connection=False;Encrypt=True;", sqlOptions =>
+        sqlOptions.UseNetTopologySuite()));
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();

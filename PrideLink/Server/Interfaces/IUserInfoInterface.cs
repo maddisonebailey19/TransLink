@@ -1,11 +1,32 @@
-﻿using PrideLink.Shared.General;
+﻿using PrideLink.Server.TransLinkDataBase;
+using PrideLink.Shared.FreindFinderDetails;
+using PrideLink.Shared.General;
 using PrideLink.Shared.UserInfo;
 
 namespace PrideLink.Server.Interfaces
 {
     public interface IUserInfoInterface
     {
+        public List<TblGeneralConfiguration> GetUserGeneralConfiguration(List<int> userNos);
+        public List<TblUser> GetTblUsers(List<int> userNos);
+        public List<TblHobbyUserMappingTable> GetUserHobbyUserMappingTable(List<int> userNos);
+        public List<TblHobby> GetUserHobbies();
+        public List<TblRelationshipStatusType> GetUserRelationshipStatusTypes();
+
+
+
+
+
+        public List<UserAccountGeneralInfo> GetUserAccountGeneralInfo(List<int> userNos);
+        public List<UserAccountRelashionshipStatus> GetUserAccountRelashionshipStatus(List<int> userNos);
+
+
+
+
+
         public bool AddRemoveEmailFromUser(Email email, int userNo);
+
+        public string GetUserVerificationStatus(int userNo);
 
         public bool AddUserPicture(UserPicture picture, int userNo); 
         public UserPicture GetUserPicture(UserPicture userPicture, int userNo);

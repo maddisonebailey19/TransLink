@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using PrideLink.Client.Helpers;
 using PrideLink.Server.Helpers;
 using PrideLink.Server.Interfaces;
 using PrideLink.Shared.FreindFinderDetails;
@@ -35,8 +36,10 @@ namespace PrideLink.Server.Controllers
             var jwtToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
 
             int userNo = int.Parse(_jWTHelper.GetUserNo(jwtToken));
+            
+            List<string> roles = _jWTHelper.GetRoles(jwtToken);
 
-            List<UserFreindFinderAccount?> response = _freindFinderUserInfoInterface.GetAllUserFreindFinderAccounts(userLocation);
+            List<UserFreindFinderAccount?> response = _freindFinderUserInfoInterface.GetAllUserFreindFinderAccounts(userLocation, roles);
             response.Remove(response.FirstOrDefault(e => e.userNo == userNo));
             if (response != null)
             {

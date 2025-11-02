@@ -94,6 +94,26 @@ namespace PrideLink.Server.Controllers
             }
 
         }
+
+        [HttpGet]
+        [Authorize(Roles = "Admin,General")]
+        [Route("IsUserInRole")]
+        public IActionResult IsUserInRole(string roleName)
+        {
+            var jwtToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+
+            List<string> roles = _jWTHelper.GetRoles(jwtToken);
+
+            if (roles.Contains(roleName))
+            {
+                return Ok();
+            }
+            else
+            {
+                return Forbid();
+            }
+
+        }
         //TODO patch update password
     }
 }
