@@ -7,18 +7,18 @@ namespace PrideLink.Server.Helpers
 {
     public class LoginDetailsHelper : ILoginInterface
     {
-        public int CheckLoginCred(string userName, string password)
+        public string? CheckLoginCred(string userName, string password)
         {
             using(var context = new MasContext())
             {
                 var entity = context.TblUsers.FirstOrDefault(e => e.Login == userName && e.Password == password);
                 if(entity != null)
                 {
-                    return entity.UserNo;
+                    return entity.UserId;
                 }
                 else
                 {
-                    return -1;
+                    return null;
                 }
             }
         }
@@ -59,13 +59,20 @@ namespace PrideLink.Server.Helpers
 
             }
         }
-        public List<UserRoles> GetRoles(int userNo)
+        public List<UserRoles> GetRoles(string userID)
         {
             List<UserRoles> roles = new List<UserRoles>();
             using(var context = new MasContext())
             {
-                List<TblUserRoleMappingTable> mappingRoles = context.TblUserRoleMappingTables.Where(e => e.UserNo == userNo).ToList();
-                foreach(var mappepedRole in mappingRoles)
+
+                List<TblUserRoleMappingTable> mappingRoles = context.TblUserRoleMappingTables
+                                                                            .Where(r => r.UserNo == context.TblUsers
+                                                                            .Where(u => u.UserId == userID)
+                                                                            .Select(u => u.UserNo)
+                                                                            .FirstOrDefault())
+                                                                            .ToList();
+
+                foreach (var mappepedRole in mappingRoles)
                 {
                     TblUserRoleType roleType = context.TblUserRoleTypes.FirstOrDefault(e => e.UserRoleTypeNo == mappepedRole.UserRoleTypeNo);
                     UserRoles role = new UserRoles();

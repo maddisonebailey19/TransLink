@@ -42,7 +42,7 @@ namespace PrideLink.Server.Controllers
         [Route("UserVerificationStatus")]
         public IActionResult GetVerificationStatus()
         {
-            var jwtToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+            var jwtToken = Request.Cookies["AuthToken"];
 
             int userNo = int.Parse(_jWTHelper.GetUserNo(jwtToken));
 

@@ -265,24 +265,6 @@ else
         base64Images = new List<string>(); //TODO change to get pics
         listGroupItems = new List<string>(); //TODO probably change with hobbys
 
-        // Get token
-        token = await _jwt_helper.GetJWTToken();
-
-        // Log token to browser console and server console
-        if (token == null)
-        {
-            await JSRuntime.InvokeVoidAsync("console.log", "JWT token: null");
-            Console.WriteLine("JWT token: null");
-            // If you want to stop initialization when there's no token, uncomment return:
-            return;
-        }
-        else
-        {
-            await JSRuntime.InvokeVoidAsync("console.log", $"JWT token: {token.token}");
-            await JSRuntime.InvokeVoidAsync("console.log", $"JWT expireDate: {token.expireDate:O}");
-            Console.WriteLine($"JWT token: {token.token}, expireDate: {token.expireDate:O}");
-        }
-
         userIsVerified = (await IsUserVerified());
         if (userIsVerified)
         {
@@ -321,8 +303,6 @@ else
 
     private async Task UserAllowedToVerify()
     {
-        _Http.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", token.token);
         var response = await _Http.GetAsync("api/Login/IsUserInRole/?roleName=Verifier");
         switch (response.StatusCode)
         {
@@ -341,9 +321,6 @@ else
 
     private async Task<bool> IsUserVerified()
     {
-        _Http.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", token.token);
-
         var response = await _Http.GetAsync("api/General/UserVerificationStatus");
         string userStatus = await response.Content.ReadAsStringAsync();
         switch (userStatus)
@@ -379,28 +356,12 @@ else
 
     private async Task UploadUserLocation()
     {
-        if (token == null || string.IsNullOrEmpty(token.token))
-        {
-            Console.WriteLine("UploadUserLocation: no token, skipping upload");
-            await JSRuntime.InvokeVoidAsync("console.log", "UploadUserLocation: no token, skipping upload");
-            return;
-        }
-
-        _Http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.token);
         var response = await _Http.PostAsJsonAsync<UserLocationData>("api/UserLocation/AddUpdateUserLocation", userLocationData);
         Console.WriteLine($"UploadUserLocation response: {response.StatusCode}");
     }
 
     private async Task GetAllUserAccountInfo()
     {
-        if (token == null || string.IsNullOrEmpty(token.token))
-        {
-            Console.WriteLine("GetAllUserAccountInfo: no token, skipping API call");
-            await JSRuntime.InvokeVoidAsync("console.log", "GetAllUserAccountInfo: no token, skipping API call");
-            return;
-        }
-
-        _Http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.token);
         var response = await _Http.PostAsJsonAsync<UserLocationData>("api/FreindFinderAccountInfo/GetFreindFinderAccountInfo", userLocationData);
         Console.WriteLine($"GetAllUserAccountInfo response: {response.StatusCode}");
         if (response.IsSuccessStatusCode)

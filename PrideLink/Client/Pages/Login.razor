@@ -64,8 +64,8 @@
         var response = await _Http.GetAsync("api/Login/Login-Checker" + urlString);
         if (response.IsSuccessStatusCode)
         {
-            jwtToken result = await response.Content.ReadFromJsonAsync<jwtToken>();
-            _JS.InvokeVoidAsync("localStorage.setItem", "Token", JsonSerializer.Serialize(result));
+            // jwtToken result = await response.Content.ReadFromJsonAsync<jwtToken>();
+            // _JS.InvokeVoidAsync("localStorage.setItem", "Token", JsonSerializer.Serialize(result));
             if (loginCreated)
             {
                 _Navigation.NavigateTo("/TermsAndConditions");
@@ -74,7 +74,6 @@
             {
                 _Navigation.NavigateTo("/");
             }
-            _Http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", result.token);
             var userNoResponse = await _Http.GetAsync("api/Login/GetUserID");
             if (userNoResponse.IsSuccessStatusCode)
             {

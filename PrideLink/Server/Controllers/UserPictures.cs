@@ -26,7 +26,7 @@ namespace PrideLink.Server.Controllers
         [Route("AddUserPicture")]
         public IActionResult AddUserPicture(UserPicture userPicture)
         {
-            var jwtToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+            var jwtToken = Request.Cookies["AuthToken"];
 
             int userNo = int.Parse(_jWTHelper.GetUserNo(jwtToken));
             bool response = _userInfoInterface.AddUserPicture(userPicture, userNo);
@@ -49,7 +49,7 @@ namespace PrideLink.Server.Controllers
         [Route("GetUserPictures")]
         public IActionResult GetUserPictures(UserPicture userPicture)
         {
-            var jwtToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+            var jwtToken = Request.Cookies["AuthToken"];
 
             int userNo = int.Parse(_jWTHelper.GetUserNo(jwtToken));
             UserPicture response = _userInfoInterface.GetUserPicture(userPicture, userNo);

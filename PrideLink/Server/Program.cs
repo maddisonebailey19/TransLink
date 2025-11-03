@@ -43,8 +43,17 @@ builder.Services.AddAuthentication(options =>
     };
 
     // Optional: log auth failures to console to diagnose 401/CORS vs auth issues
-    options.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
+    options.Events = new JwtBearerEvents
     {
+        OnMessageReceived = context =>
+        {
+            if (context.Request.Cookies.ContainsKey("AuthToken"))
+            {
+                context.Token = context.Request.Cookies["AuthToken"];
+            }
+            return Task.CompletedTask;
+        },
+        // Optional: log auth failures
         OnAuthenticationFailed = ctx =>
         {
             Console.WriteLine("JWT auth failed: " + ctx.Exception);

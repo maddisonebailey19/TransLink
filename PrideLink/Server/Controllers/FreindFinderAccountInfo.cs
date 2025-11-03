@@ -33,7 +33,8 @@ namespace PrideLink.Server.Controllers
         [Route("GetFreindFinderAccountInfo")]
         public IActionResult GetFreindFinderAccountInfo(UserLocationData userLocation)
         {
-            var jwtToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+            //var jwtToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+            var jwtToken = Request.Cookies["AuthToken"];
 
             int userNo = int.Parse(_jWTHelper.GetUserNo(jwtToken));
             

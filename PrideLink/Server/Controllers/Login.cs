@@ -5,7 +5,10 @@ using PrideLink.Server.Helpers;
 using PrideLink.Server.Interfaces;
 using PrideLink.Server.Internal_Models;
 using PrideLink.Shared.LoginDetails;
+using RTools_NTS.Util;
 using System.Data;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Text;
 
 namespace PrideLink.Server.Controllers
@@ -29,11 +32,10 @@ namespace PrideLink.Server.Controllers
         [Route("Login-Checker")]
         public IActionResult CheckLoginCreds(string userName, string password)
         {
-            jwtToken response = new jwtToken();
-            int userNo = _loginInterface.CheckLoginCred(userName, password);
-            if(userNo != -1)
+            string userID = _loginInterface.CheckLoginCred(userName, password);
+            if(userID != null)
             {
-                List<UserRoles> userRoles = _loginInterface.GetRoles(userNo);
+                List<UserRoles> userRoles = _loginInterface.GetRoles(userID);
                 List<string> roles = new List<string>();
                 foreach (var role in userRoles)
                 {
@@ -41,15 +43,46 @@ namespace PrideLink.Server.Controllers
                 }
                 DateTime expireDate = DateTime.Now;
                 expireDate = expireDate.AddMinutes(int.Parse(_configuration["Jwt:ExpiresInMinutes"]));
-                response.token = _jWTHelper.GenerateJwtToken(userNo.ToString(), roles);
-                response.expireDate = expireDate;
-                return Ok(response);
+
+
+                var token = _jWTHelper.GenerateJwtToken(userID, roles);
+
+                var cookieOptions = new CookieOptions
+                {
+                    HttpOnly = true,          // cannot be accessed via JS
+                    Secure = true,            // only sent via HTTPS
+                    SameSite = SameSiteMode.Strict,
+                    Expires = DateTime.UtcNow.AddHours(1)
+                };
+
+                Response.Cookies.Append("AuthToken", token, cookieOptions);
+
+                return Ok();
             }
             else
             {
-                return NotFound();
+                return Unauthorized();
             }
             
+        }
+
+        [HttpGet]
+        [Route("IsUserLoggedIn")]
+        public IActionResult IsUserLoggedIn()
+        {
+            try
+            {
+                // If the request reached here, the JWT was valid
+                var userId = User.FindFirstValue(JwtRegisteredClaimNames.Sub)
+                             ?? User.FindFirstValue("userID");
+
+                return Ok();
+            }
+            catch
+            {
+                // If anything went wrong, token is invalid or expired
+                return Unauthorized(new { isLoggedIn = false });
+            }
         }
 
         [HttpGet]
@@ -79,7 +112,7 @@ namespace PrideLink.Server.Controllers
         {
             UserCreated login = new UserCreated();
 
-            var jwtToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+            var jwtToken = Request.Cookies["AuthToken"];
 
             int userNo = int.Parse(_jWTHelper.GetUserNo(jwtToken));
 
@@ -100,7 +133,7 @@ namespace PrideLink.Server.Controllers
         [Route("IsUserInRole")]
         public IActionResult IsUserInRole(string roleName)
         {
-            var jwtToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+            var jwtToken = Request.Cookies["AuthToken"];
 
             List<string> roles = _jWTHelper.GetRoles(jwtToken);
 
@@ -120,7 +153,7 @@ namespace PrideLink.Server.Controllers
         [Route("GetUserID")]
         public IActionResult GetUserID()
         {
-            var jwtToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+            var jwtToken = Request.Cookies["AuthToken"];
 
             string userNo = _jWTHelper.GetUserNo(jwtToken);
 

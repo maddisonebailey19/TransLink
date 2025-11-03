@@ -26,7 +26,7 @@ namespace PrideLink.Server.Controllers
         [Route("AddUserName")]
         public IActionResult AddUserName(DisplayName displayName)
         {
-            var jwtToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+            var jwtToken = Request.Cookies["AuthToken"];
 
             int userNo = int.Parse(_jWTHelper.GetUserNo(jwtToken));
 
@@ -49,7 +49,7 @@ namespace PrideLink.Server.Controllers
         [Route("GetUserName")]
         public IActionResult GetUserName()
         {
-            var jwtToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+            var jwtToken = Request.Cookies["AuthToken"];
 
             int userNo = int.Parse(_jWTHelper.GetUserNo(jwtToken));
 

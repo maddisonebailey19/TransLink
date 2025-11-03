@@ -3,6 +3,8 @@
 @using PrideLink.Shared.LoginDetails;
 @inject jwtHelper _jwtHelper
 @inject NavigationManager _navigationManager
+@inject HttpClient _Http
+
 <style>
     .image-button {
         background-color: rgba(255, 255, 255, 0);
@@ -30,18 +32,10 @@ Welcome to your new app.
 @code{
     protected override async Task OnInitializedAsync()
     {
-        jwtToken? token = await _jwtHelper.GetJWTToken();
-        if(token == null)
+        var response = await _Http.GetAsync("api/Login/IsUserLoggedIn");
+        if (!response.IsSuccessStatusCode)
         {
             _navigationManager.NavigateTo("/login");
-        }
-        else
-        {
-            if(token.expireDate <= DateTime.UtcNow.AddMinutes(-5))
-            {
-                //TODO possibly check if user and password is stored and use that to auto login
-                _navigationManager.NavigateTo("/login");
-            }
         }
     }
 }

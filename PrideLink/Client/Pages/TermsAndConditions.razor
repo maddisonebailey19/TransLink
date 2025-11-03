@@ -98,7 +98,6 @@ else
 
         userOptIns.optInType = 1;
         userOptIns.isOptedIn = emailOptIn;
-        _Http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.token);
         var response = await _Http.PostAsJsonAsync<UserOptIn>("api/UserOptIns/UserOptIn", userOptIns);
 
         loadingPercentage += 33;
@@ -106,7 +105,6 @@ else
 
         if (emailOptIn)
         {
-            _Http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.token);
             response = await _Http.PostAsJsonAsync<Email>("api/UserInfo/AddRemoveEmail", email);
             loadingPercentage += 33;
             StateHasChanged();
@@ -119,7 +117,6 @@ else
 
         userOptIns.optInType = 2;
         userOptIns.isOptedIn = acceptRules;
-        _Http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.token);
         response = await _Http.PostAsJsonAsync<UserOptIn>("api/UserOptIns/UserOptIn", userOptIns);
 
         loadingPercentage += 33;

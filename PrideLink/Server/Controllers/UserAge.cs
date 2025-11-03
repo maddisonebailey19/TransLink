@@ -26,7 +26,7 @@ namespace PrideLink.Server.Controllers
         [Route("AddUserAge")]
         public IActionResult AddUserAge(Age age)
         {
-            var jwtToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+            var jwtToken = Request.Cookies["AuthToken"];
 
             int userNo = int.Parse(_jWTHelper.GetUserNo(jwtToken));
 
@@ -49,7 +49,7 @@ namespace PrideLink.Server.Controllers
         [Route("GetUserAge")]
         public IActionResult GetUserAge()
         {
-            var jwtToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+            var jwtToken = Request.Cookies["AuthToken"];
 
             int userNo = int.Parse(_jWTHelper.GetUserNo(jwtToken));
 

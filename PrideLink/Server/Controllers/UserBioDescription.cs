@@ -26,7 +26,7 @@ namespace PrideLink.Server.Controllers
         [Route("AddUserBioDescription")]
         public IActionResult AddUserBioDescription(UserBioDescriptionData userBioDescription)
         {
-            var jwtToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+            var jwtToken = Request.Cookies["AuthToken"];
 
             int userNo = int.Parse(_jWTHelper.GetUserNo(jwtToken));
 
@@ -49,7 +49,7 @@ namespace PrideLink.Server.Controllers
         [Route("GetUserBioDescription")]
         public IActionResult GetUserBioDescription()
         {
-            var jwtToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+            var jwtToken = Request.Cookies["AuthToken"];
 
             int userNo = int.Parse(_jWTHelper.GetUserNo(jwtToken));
 

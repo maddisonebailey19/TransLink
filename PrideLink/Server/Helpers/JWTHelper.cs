@@ -1,4 +1,6 @@
 ﻿using Microsoft.IdentityModel.Tokens;
+using PrideLink.Server.Interfaces;
+using PrideLink.Server.TransLinkDataBase;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -13,21 +15,25 @@ namespace PrideLink.Server.Helpers
             _config = configuration;
         }
 
-        public string GenerateJwtToken(string userName, List<string> roles)
+        public string GenerateJwtToken(string userId, List<string> roles)
         {
-            // Use the same base64-decoded key as in Program.cs
+            // Decode the base64 key
             var keyBytes = Convert.FromBase64String(_config["Jwt:Key"]);
             var key = new SymmetricSecurityKey(keyBytes);
             var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
+            // Core claims
             var claims = new List<Claim>
             {
-                new Claim(JwtRegisteredClaimNames.Sub, userName),
+                new Claim(JwtRegisteredClaimNames.Sub, userId),           // standard claim
+                new Claim("userID", userId),                              // custom claim
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
 
+            // Role claims
             claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
 
+            // Create the token
             var token = new JwtSecurityToken(
                 issuer: _config["Jwt:Issuer"],
                 audience: _config["Jwt:Audience"],
@@ -54,8 +60,13 @@ namespace PrideLink.Server.Helpers
                     ClockSkew = TimeSpan.Zero
                 }, out SecurityToken validatedToken);
 
-                var userNoClaim = claimsPrincipal.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
-                return userNoClaim?.Value;
+                var userID = claimsPrincipal.Claims.FirstOrDefault(c => c.Type == "userID")?.Value
+                ?? claimsPrincipal.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub)?.Value;
+                using (var context = new MasContext())
+                {
+                    int userNo = context.TblUsers.FirstOrDefault(e => e.UserId == userID).UserNo;
+                    return userNo.ToString();
+                }
             }
             catch (Exception ex)
             {

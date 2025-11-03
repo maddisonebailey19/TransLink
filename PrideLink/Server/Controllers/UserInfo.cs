@@ -27,7 +27,7 @@ namespace PrideLink.Server.Controllers
         [Route("AddRemoveEmail")]
         public IActionResult AddRemoveEmail(Email email)
         {
-            var jwtToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+            var jwtToken = Request.Cookies["AuthToken"];
 
             int userNo = int.Parse(_jWTHelper.GetUserNo(jwtToken));
             bool response = _userInfoInterface.AddRemoveEmailFromUser(email, userNo);

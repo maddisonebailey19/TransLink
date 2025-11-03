@@ -29,7 +29,7 @@ namespace PrideLink.Server.Controllers
         public IActionResult UserOptInOut(UserOptIn userOptIns)
         {
             UserOptInsResponse userOptInsResponse = new UserOptInsResponse();
-            var jwtToken = Request.Headers["Authorization"].ToString().Replace("Bearer ","");
+            var jwtToken = Request.Cookies["AuthToken"];
 
             int userNo = int.Parse(_jWTHelper.GetUserNo(jwtToken));
             bool response = _userOptInInterface.UserOptIn(userOptIns, userNo);

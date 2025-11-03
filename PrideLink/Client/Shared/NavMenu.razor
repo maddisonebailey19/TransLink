@@ -171,33 +171,21 @@
 
     private async Task RefreshVerificationStatus()
     {
-        token = await _jwt_helper.GetJWTToken();
-        Console.WriteLine("2 Token is: " + token);
 
-        if (token != null)
+        Console.WriteLine("Token accepted");
+
+        var response = await _Http.GetAsync("api/General/UserVerificationStatus");
+
+        if (response.IsSuccessStatusCode)
         {
-            Console.WriteLine("Token accepted");
-            _Http.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", token.token);
-
-            var response = await _Http.GetAsync("api/General/UserVerificationStatus");
-
-            if (response.IsSuccessStatusCode)
-            {
-                verifiedStatus = await response.Content.ReadAsStringAsync();
-            }
-            else
-            {
-                verifiedStatus = "Unable to verify user";
-            }
-
-            StateHasChanged();
+            verifiedStatus = await response.Content.ReadAsStringAsync();
         }
         else
         {
-            Console.WriteLine("Token declined");
-            verifiedStatus = "";
+            verifiedStatus = "Unable to verify user";
         }
+
+        StateHasChanged();
 
         Console.WriteLine("error");
     }

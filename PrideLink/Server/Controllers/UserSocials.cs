@@ -26,7 +26,7 @@ namespace PrideLink.Server.Controllers
         [Route("AddUpdateUserSocial")]
         public IActionResult AddUpdateUserSocial(UserSocial userSocial)
         {
-            var jwtToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+            var jwtToken = Request.Cookies["AuthToken"];
 
             string locationUri = "api/UserSocials/AddUpdateUserSocial";
 
@@ -47,7 +47,7 @@ namespace PrideLink.Server.Controllers
         [Route("GetUserSocial")]
         public IActionResult GetUserSocial()
         {
-            var jwtToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+            var jwtToken = Request.Cookies["AuthToken"];
 
             string locationUri = "api/UserSocials/GetUserSocial";
 
