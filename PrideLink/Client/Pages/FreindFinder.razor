@@ -76,14 +76,16 @@ else
         }
         else
         {
-            @foreach (UserFreindFinderAccount finderAccount in userFreindFinderAccounts)
+            @foreach (var finderAccount in userFreindFinderAccounts)
             {
-                <div class="card mb-3">
-                    <div class="card-header d-flex justify-content-between align-items-center">
+                <div class="card mb-4 shadow-sm border-0 rounded-4">
+                    <!-- Header -->
+                    <div class="card-header bg-light d-flex justify-content-between align-items-center rounded-top-4">
                         <h3 class="mb-0">@finderAccount.UserAccountGeneralInfo.DisplayName</h3>
-                        @if (userAllowedToVerify && @finderAccount.UserAccountGeneralInfo.UserVerified == "Unverified")
+
+                        @if (userAllowedToVerify && finderAccount.UserAccountGeneralInfo.UserVerified == "Unverified")
                         {
-                            <span class="badge bg-secondary text-dark text-decoration-none"
+                            <span class="badge bg-secondary text-dark"
                                   style="cursor: pointer;"
                                   @onclick="() => ShowVerifyPopup(finderAccount.userNo)">
                                 @finderAccount.UserAccountGeneralInfo.UserVerified
@@ -96,105 +98,106 @@ else
                             </span>
                         }
                     </div>
-                    <div class="scrollable-images-container">
+
+                    <!-- Profile Images -->
+                    <div class="scrollable-images-container d-flex flex-row overflow-auto p-2" style="gap: 10px;">
                         @foreach (var base64Image in finderAccount.UserAccountPictures)
                         {
-                            if (base64Image.base64Image != null)
+                            if (!string.IsNullOrEmpty(base64Image.base64Image))
                             {
-                                <img src="@base64Image.base64Image" class="card-image" alt="Image" />
+                                <img src="@base64Image.base64Image"
+                                     class="rounded-3"
+                                     style="object-fit: cover; width: 180px; height: 180px;"
+                                     alt="User image" />
                             }
                         }
                     </div>
+
+                    <!-- About Me -->
                     <div class="card-body">
-                        <h4>About me</h4>
-                        <div class="card-image custom-box">
-                            <p class="card-text">@finderAccount.UserAccountGeneralInfo.BioDescription</p>
+                        <h4 class="fw-semibold">About me</h4>
+                        <div class="p-3 border rounded-3 bg-light">
+                            <p class="mb-0">@finderAccount.UserAccountGeneralInfo.BioDescription</p>
                         </div>
                     </div>
 
-                    <div class="accordion" id="accordionExample_@finderAccount.userNo">
+                    <!-- Accordion -->
+                    <div class="accordion" id="accordion_@finderAccount.userNo">
+                        <!-- Hobbies -->
                         <div class="accordion-item">
-                            <h2 class="accordion-header" id="@finderAccount.userNo+_hobbies">
-                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseHobbies_@finderAccount.userNo" aria-expanded="false" aria-controls="collapseHobbies_@finderAccount.userNo">
+                            <h2 class="accordion-header" id="headingHobbies_@finderAccount.userNo">
+                                <button class="accordion-button collapsed"
+                                        type="button"
+                                        data-bs-toggle="collapse"
+                                        data-bs-target="#collapseHobbies_@finderAccount.userNo"
+                                        aria-expanded="false"
+                                        aria-controls="collapseHobbies_@finderAccount.userNo">
                                     Hobbies
                                 </button>
                             </h2>
-                            <div id="collapseHobbies_@finderAccount.userNo" class="accordion-collapse collapse" aria-labelledby="@finderAccount.userNo+_hobbies" data-bs-parent="#accordionExample_@finderAccount.userNo">
+                            <div id="collapseHobbies_@finderAccount.userNo"
+                                 class="accordion-collapse collapse"
+                                 aria-labelledby="headingHobbies_@finderAccount.userNo"
+                                 data-bs-parent="#accordion_@finderAccount.userNo">
                                 <div class="accordion-body">
-                                    @foreach (UserAccountHobbies userAccountHobbies in finderAccount.UserAccountHobbies)
+                                    @foreach (var hobby in finderAccount.UserAccountHobbies)
                                     {
-                                        <button type="button" class="btn btn-primary rounded-pill" disabled="@true" style="margin-right: 10px; margin-top: 10px">@userAccountHobbies.HobbyName</button>
+                                        <button class="btn btn-primary rounded-pill me-2 mt-2" disabled>
+                                            @hobby.HobbyName
+                                        </button>
                                     }
                                 </div>
                             </div>
                         </div>
 
+                        <!-- Socials -->
                         <div class="accordion-item">
-                            <h2 class="accordion-header" id="@finderAccount.userNo+_socials">
-                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSocials_@finderAccount.userNo" aria-expanded="false" aria-controls="collapseSocials_@finderAccount.userNo">
+                            <h2 class="accordion-header" id="headingSocials_@finderAccount.userNo">
+                                <button class="accordion-button collapsed"
+                                        type="button"
+                                        data-bs-toggle="collapse"
+                                        data-bs-target="#collapseSocials_@finderAccount.userNo"
+                                        aria-expanded="false"
+                                        aria-controls="collapseSocials_@finderAccount.userNo">
                                     Socials
                                 </button>
                             </h2>
                             <div id="collapseSocials_@finderAccount.userNo"
                                  class="accordion-collapse collapse"
-                                 aria-labelledby="@finderAccount.userNo+_socials"
-                                 data-bs-parent="#accordionExample_@finderAccount.userNo">
+                                 aria-labelledby="headingSocials_@finderAccount.userNo"
+                                 data-bs-parent="#accordion_@finderAccount.userNo">
                                 <div class="accordion-body">
                                     @{
-                                        var instagram = finderAccount.UserAccountSocials.FirstOrDefault(e => e.socialTypeNo == 1)?.socialValue;
-                                        var snapchat = finderAccount.UserAccountSocials.FirstOrDefault(e => e.socialTypeNo == 2)?.socialValue;
-                                        var whatsapp = finderAccount.UserAccountSocials.FirstOrDefault(e => e.socialTypeNo == 3)?.socialValue;
-                                        var discord = finderAccount.UserAccountSocials.FirstOrDefault(e => e.socialTypeNo == 4)?.socialValue;
+                                        var socials = new Dictionary<string, (string Url, string? Value)>
+                                        {
+                                            ["Instagram"] = ("https://instagram.com/", finderAccount.UserAccountSocials.FirstOrDefault(e => e.socialTypeNo == 1)?.socialValue),
+                                            ["Snapchat"] = ("https://snapchat.com/add/", finderAccount.UserAccountSocials.FirstOrDefault(e => e.socialTypeNo == 2)?.socialValue),
+                                            ["WhatsApp"] = ("https://wa.me/", finderAccount.UserAccountSocials.FirstOrDefault(e => e.socialTypeNo == 3)?.socialValue),
+                                            ["Discord"] = ("https://discordapp.com/users/", finderAccount.UserAccountSocials.FirstOrDefault(e => e.socialTypeNo == 4)?.socialValue)
+                                        };
                                     }
 
-                                    <label class="form-label mt-4">Instagram</label>
-                                    @if (!string.IsNullOrWhiteSpace(instagram))
+                                    @foreach (var social in socials)
                                     {
-                                        <a href="https://instagram.com/@(instagram)" target="_blank"
-                                           class="form-control text-primary">@instagram</a>
-                                    }
-                                    else
-                                    {
-                                        <p class="form-text text-muted">No Instagram linked</p>
-                                    }
+                                        <label class="form-label mt-3">@social.Key</label>
 
-                                    <label class="form-label mt-4">Snapchat</label>
-                                    @if (!string.IsNullOrWhiteSpace(snapchat))
-                                    {
-                                        <a href="https://snapchat.com/add/@(snapchat)" target="_blank"
-                                           class="form-control text-primary">@snapchat</a>
-                                    }
-                                    else
-                                    {
-                                        <p class="form-text text-muted">No Snapchat linked</p>
-                                    }
-
-                                    <label class="form-label mt-4">WhatsApp</label>
-                                    @if (!string.IsNullOrWhiteSpace(whatsapp))
-                                    {
-                                        <a href="https://wa.me/@(whatsapp)" target="_blank"
-                                           class="form-control text-primary">@whatsapp</a>
-                                    }
-                                    else
-                                    {
-                                        <p class="form-text text-muted">No WhatsApp linked</p>
-                                    }
-
-                                    <label class="form-label mt-4">Discord</label>
-                                    @if (!string.IsNullOrWhiteSpace(discord))
-                                    {
-                                        <a href="https://discordapp.com/users/@(discord)" target="_blank"
-                                           class="form-control text-primary">@discord</a>
-                                    }
-                                    else
-                                    {
-                                        <p class="form-text text-muted">No Discord linked</p>
+                                        @if (!string.IsNullOrWhiteSpace(social.Value.Value))
+                                        {
+                                            <a href="@($"{social.Value.Url}{social.Value.Value}")"
+                                               target="_blank"
+                                               class="form-control text-primary">
+                                                @social.Value.Value
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <p class="form-text text-muted">No @social.Key linked</p>
+                                        }
                                     }
                                 </div>
                             </div>
                         </div>
                     </div>
-
                 </div>
             }
         }

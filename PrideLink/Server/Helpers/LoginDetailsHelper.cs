@@ -1,4 +1,5 @@
-﻿using PrideLink.Server.Interfaces;
+﻿using PrideLink.Server.Controllers;
+using PrideLink.Server.Interfaces;
 using PrideLink.Server.Internal_Models;
 using PrideLink.Server.TransLinkDataBase;
 using PrideLink.Shared.LoginDetails;
@@ -22,6 +23,7 @@ namespace PrideLink.Server.Helpers
                 }
             }
         }
+
         public int CreateLogin(string userName, string password)
         {
             using(var context = new MasContext())
@@ -83,22 +85,6 @@ namespace PrideLink.Server.Helpers
             }
             return roles;
         }
-        public bool UpdatePassword(string password, int userNo)
-        {
-            using(var context = new MasContext())
-            {
-                var entity = context.TblUsers.FirstOrDefault(e => e.UserNo == userNo);
-                if(entity != null)
-                {
-                    entity.Password = password;
-                    context.SaveChanges();
-                    return true;
-                }
-                else
-                {
-                    return false;
-                }
-            }
-        }
+        
     }
 }

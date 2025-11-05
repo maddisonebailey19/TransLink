@@ -8,7 +8,6 @@ namespace PrideLink.Server.Interfaces
     {
         public string? CheckLoginCred(string userName, string password);
         public int CreateLogin(string userName, string password);
-        public bool UpdatePassword(string password, int userNo);
         public List<UserRoles> GetRoles(string userID);
     }
 }

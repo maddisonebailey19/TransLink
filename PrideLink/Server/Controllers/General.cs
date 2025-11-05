@@ -19,14 +19,15 @@ namespace PrideLink.Server.Controllers
         private readonly IGeneralInterface _generalInterface;
         private readonly JWTHelper _jWTHelper;
         private readonly IHubContext<NotificationHub> _hubContext;
+        private readonly IGmailInterface _gmailInterface;
 
-        public General(IGeneralInterface generalInterface, JWTHelper jWTHelper, IHubContext<NotificationHub> hubContext)
+        public General(IGeneralInterface generalInterface, JWTHelper jWTHelper, IHubContext<NotificationHub> hubContext, IGmailInterface gmailInterface)
         {
             _generalInterface = generalInterface;
             _hubContext = hubContext;
             this._jWTHelper = jWTHelper;
+            _gmailInterface = gmailInterface;
         }
-
 
         [HttpGet]
         [Authorize(Roles = "Admin,General")]

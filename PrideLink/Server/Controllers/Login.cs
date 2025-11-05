@@ -75,8 +75,14 @@ namespace PrideLink.Server.Controllers
                 // If the request reached here, the JWT was valid
                 var userId = User.FindFirstValue(JwtRegisteredClaimNames.Sub)
                              ?? User.FindFirstValue("userID");
-
-                return Ok();
+                if(userId == null)
+                {
+                    return Unauthorized();
+                }
+                else
+                {
+                    return Ok();
+                }
             }
             catch
             {
@@ -103,29 +109,6 @@ namespace PrideLink.Server.Controllers
                 return Created(locationUri, login);
             }
             
-        }
-
-        [HttpPatch]
-        [Authorize(Roles = "Admin,General")]
-        [Route("Update-Password")]
-        public IActionResult UpdatePassword(string password)
-        {
-            UserCreated login = new UserCreated();
-
-            var jwtToken = Request.Cookies["AuthToken"];
-
-            int userNo = int.Parse(_jWTHelper.GetUserNo(jwtToken));
-
-            bool result = _loginInterface.UpdatePassword(password, userNo);
-            if(result)
-            {
-                return Ok();
-            }
-            else
-            {
-                return UnprocessableEntity();
-            }
-
         }
 
         [HttpGet]

@@ -65,7 +65,11 @@ namespace PrideLink.Server.Helpers
                 using (var context = new MasContext())
                 {
                     int userNo = context.TblUsers.FirstOrDefault(e => e.UserId == userID).UserNo;
-                    return userNo.ToString();
+                    if(userNo != null)
+                    {
+                        return userNo.ToString();
+                    }
+                    return null;
                 }
             }
             catch (Exception ex)

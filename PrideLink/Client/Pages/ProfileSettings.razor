@@ -344,23 +344,8 @@ else
         relationshipStatus = status;
     }
 
-    protected override async Task OnInitializedAsync()
+    private async Task RunAsyncSteps(List<(string Name, Func<Task> Action)> steps)
     {
-        // Define each step with a friendly name
-        var steps = new List<(string Name, Func<Task> Action)>
-        {
-            ("Get JWT Token", async () => { token = await _jwtHelper.GetJWTToken(); }),
-            ("Load Relationship Statuses", async () => await LoadRelastionshipStatuses()),
-            ("Load User Age", async () => await LoadUserAge()),
-            ("Load User Description", async () => await LoadUserDescription()),
-            ("Load Hobbies", async () => await LoadHobbies()),
-            ("Load User Name", async () => await LoadUserName()),
-            ("Load User Socials", async () => await LoadUserSocials()),
-            ("Load Picture 1", async () => { pictureOne = await LoadImageFromDatabaseAsync(1); }),
-            ("Load Picture 2", async () => { pictureTwo = await LoadImageFromDatabaseAsync(2); }),
-            ("Load Picture 3", async () => { pictureThree = await LoadImageFromDatabaseAsync(3); })
-        };
-
         CalculateLoadingIncrement(steps.Count);
 
         for (int i = 0; i < steps.Count; i++)
@@ -383,38 +368,26 @@ else
             else
                 LoadingProgress(stepName);
         }
+    }
 
-        //CalculateLoadingIncrement(10);
-        //
-        //token = await _jwtHelper.GetJWTToken();
-        //LoadingProgress();
-        //
-        //await LoadRelastionshipStatuses();
-        //LoadingProgress();
-        //
-        //await LoadUserAge();
-        //LoadingProgress();
-        //
-        //await LoadUserDescription();
-        //LoadingProgress();
-        //
-        //await LoadHobbies();
-        //LoadingProgress();
-        //
-        //await LoadUserName();
-        //LoadingProgress();
-        //
-        //await LoadUserSocials();
-        //LoadingProgress();
-        //// Simulate fetching from the database
-        //pictureOne = await LoadImageFromDatabaseAsync(1);  // Replace with your actual loading logic
-        //LoadingProgress();
-        //
-        //pictureTwo = await LoadImageFromDatabaseAsync(2);  // Replace with your actual loading logic
-        //LoadingProgress();
-        //
-        //pictureThree = await LoadImageFromDatabaseAsync(3);  // Replace with your actual loading logic
-        //LoadingProgress(false);
+    protected override async Task OnInitializedAsync()
+    {
+        // Define each step with a friendly name
+        var steps = new List<(string Name, Func<Task> Action)>
+        {
+            ("Get JWT Token", async () => { token = await _jwtHelper.GetJWTToken(); }),
+            ("Load Relationship Statuses", async () => await LoadRelastionshipStatuses()),
+            ("Load User Age", async () => await LoadUserAge()),
+            ("Load User Description", async () => await LoadUserDescription()),
+            ("Load Hobbies", async () => await LoadHobbies()),
+            ("Load User Name", async () => await LoadUserName()),
+            ("Load User Socials", async () => await LoadUserSocials()),
+            ("Load Picture 1", async () => { pictureOne = await LoadImageFromDatabaseAsync(1); }),
+            ("Load Picture 2", async () => { pictureTwo = await LoadImageFromDatabaseAsync(2); }),
+            ("Load Picture 3", async () => { pictureThree = await LoadImageFromDatabaseAsync(3); })
+        };
+
+        await RunAsyncSteps(steps);
 
     }
 
@@ -649,61 +622,7 @@ else
             ("Uploading User Socials", async () => await UploadUserSocials())
         };
 
-        CalculateLoadingIncrement(steps.Count);
-
-        for (int i = 0; i < steps.Count; i++)
-        {
-            var (stepName, action) = steps[i];
-
-            try
-            {
-                await action();
-            }
-            catch (Exception ex)
-            {
-                // Continue on errors but log for debugging
-                Console.WriteLine($"OnInitialized step '{stepName}' failed: {ex.Message}");
-            }
-
-            // Increment progress after each step; stop loading on the last step
-            if (i == steps.Count - 1)
-                LoadingProgress(stepName, false);
-            else
-                LoadingProgress(stepName);
-        }
-        // isLoading = true;
-        // loadingPercentage = 0;
-
-        // await UploadProfilePics();
-        // loadingPercentage += 16;
-        // StateHasChanged();
-
-        // await UploadUserBio();
-        // loadingPercentage += 16;
-        // StateHasChanged();
-
-        // await UploadUserAge();
-        // loadingPercentage += 16;
-        // StateHasChanged();
-
-        // await UploadUserRelashionshipStatus();
-        // loadingPercentage += 16;
-        // StateHasChanged();
-
-        // await UploadUserHobbies();
-        // loadingPercentage += 16;
-        // StateHasChanged();
-
-        // await UploadUserName();
-        // loadingPercentage += 16;
-        // StateHasChanged();
-
-        // await UploadUserSocials();
-        // loadingPercentage += 16;
-        // StateHasChanged();
-
-        // isLoading = false;
-        // StateHasChanged();
+        await RunAsyncSteps(steps);
     }
 
     private async Task UploadUserHobbies()

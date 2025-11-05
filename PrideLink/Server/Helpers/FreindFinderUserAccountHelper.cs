@@ -23,125 +23,201 @@ namespace PrideLink.Server.Helpers
 
         public List<UserFreindFinderAccount> GetAllUserFreindFinderAccounts(UserLocationData userLocation, List<string> roles)
         {
-            List<UserFreindFinderAccount> userFreindFinderAccounts = new List<UserFreindFinderAccount>();
-            List<int> userNos = GetAllLocationWithinRange(userLocation, roles);
+            List<UserFreindFinderAccount> userAccounts = new List<UserFreindFinderAccount>();
+
+            List<VWUserFriendFinderProfile> usersFromLocation = _locationInterface.GetUsersFromLocation(userLocation, roles);
+
+            List<VWUserHobbies> userHobbies = _locationInterface.GetUserHobbies(userLocation, roles);
+
+            foreach(VWUserFriendFinderProfile userFromLocation in usersFromLocation)
+            {
+                UserFreindFinderAccount userAccount = new UserFreindFinderAccount()
+                {
+                    userNo = userFromLocation.UserNo,
+                    UserAccountGeneralInfo = new UserAccountGeneralInfo()
+                    {
+                        BioDescription = userFromLocation.BioDescription,
+                        DisplayName = userFromLocation.DisplayName,
+                        Age = userFromLocation.Age,
+                        UserVerified = _userInfoInterface.GetUserVerificationStatus(userFromLocation.UserNo)
+                    },
+                    UserAccountRelashionshipStatus = new UserAccountRelashionshipStatus()
+                    {
+                        relashionshipStatusNo = (int)(userFromLocation.RelationshipStatusNo ?? 0),
+                        relashionshipStatus = userFromLocation.RelationshipStatusName
+                    },
+                    UserAccountPictures = new List<UserAccountPictures>()
+                    {
+                        new UserAccountPictures()
+                        {
+                            pictureTypeNo = 1,
+                            base64Image = userFromLocation.Picture1
+                        },
+                        new UserAccountPictures()
+                        {
+                            pictureTypeNo = 2,
+                            base64Image = userFromLocation.Picture2
+                        },
+                        new UserAccountPictures()
+                        {
+                            pictureTypeNo = 3,
+                            base64Image = userFromLocation.Picture3
+                        }
+                    },
+                    UserAccountSocials = new List<UserAccountSocials>()
+                    {
+                        new UserAccountSocials()
+                        {
+                            socialTypeNo = 1,
+                            socialValue = userFromLocation.Instagram
+                        },
+                        new UserAccountSocials()
+                        {
+                            socialTypeNo = 2,
+                            socialValue = userFromLocation.Snapchat
+                        },
+                        new UserAccountSocials()
+                        {
+                            socialTypeNo = 3,
+                            socialValue = userFromLocation.WhatsApp
+                        },
+                        new UserAccountSocials()
+                        {
+                            socialTypeNo = 4,
+                            socialValue = userFromLocation.Discord
+                        }
+                    },
+                    UserAccountHobbies = userHobbies.Where(e => e.UserNo == userFromLocation.UserNo).Select(hobby => new UserAccountHobbies()
+                    {
+                        HobbiesTypeNo = hobby.HobbyNo,
+                        HobbyName = hobby.HobbyName
+                    }).ToList()
+                };
+                userAccounts.Add(userAccount);
+            }
+            
+            return userAccounts;
+
+            //List<UserFreindFinderAccount> userFreindFinderAccounts = new List<UserFreindFinderAccount>();
+            //List<int> userNos = GetAllLocationWithinRange(userLocation, roles);
 
             //Need to get general info from tblGeneralConfiguration and TblUsers
             //Need to get relashionship status from tblGeneralConfiguration
             //Need to get socials from tblGeneralConfiguration type 4 and 5
             //Need to get pictures from tblGeneralConfiguration type 1
-            List<TblGeneralConfiguration> tblGeneralConfigurations = _userInfoInterface.GetUserGeneralConfiguration(userNos);
-            List<TblUser> tblUsers = _userInfoInterface.GetTblUsers(userNos);
-            List<TblRelationshipStatusType> tblRelationshipStatusTypes = _userInfoInterface.GetUserRelationshipStatusTypes();
+            //List<TblGeneralConfiguration> tblGeneralConfigurations = _userInfoInterface.GetUserGeneralConfiguration(userNos);
+            //List<TblUser> tblUsers = _userInfoInterface.GetTblUsers(userNos);
+            //List<TblRelationshipStatusType> tblRelationshipStatusTypes = _userInfoInterface.GetUserRelationshipStatusTypes();
 
-            //Need to get hobbies from TblHobbyUserMappingTable
-            List<TblHobbyUserMappingTable> tblHobbyUserMappingTables = _userInfoInterface.GetUserHobbyUserMappingTable(userNos);
-            List<TblHobby> tblHobbies = _userInfoInterface.GetUserHobbies();
+            ////Need to get hobbies from TblHobbyUserMappingTable
+            //List<TblHobbyUserMappingTable> tblHobbyUserMappingTables = _userInfoInterface.GetUserHobbyUserMappingTable(userNos);
+            //List<TblHobby> tblHobbies = _userInfoInterface.GetUserHobbies();
 
-            foreach(int userNo in userNos)
-            {
-                TblUser tblUser = tblUsers.FirstOrDefault(e => e.UserNo == userNo);
-                List<TblGeneralConfiguration> generalConfiguration = tblGeneralConfigurations.Where(e => e.UserNo == userNo).ToList();
-                List<TblHobbyUserMappingTable> hobbyUserMappingTable = tblHobbyUserMappingTables.Where(e => e.UserNo == userNo).ToList();
+            //foreach(int userNo in userNos)
+            //{
+            //    Console.WriteLine($"Now Loading Data For UserNo: {userNo}");
+            //    TblUser tblUser = tblUsers.FirstOrDefault(e => e.UserNo == userNo);
+            //    List<TblGeneralConfiguration> generalConfiguration = tblGeneralConfigurations.Where(e => e.UserNo == userNo).ToList();
+            //    List<TblHobbyUserMappingTable> hobbyUserMappingTable = tblHobbyUserMappingTables.Where(e => e.UserNo == userNo).ToList();
 
-                
-                if(generalConfiguration.FirstOrDefault(e => e.TypeNo == 3) != null)
-                {
-                    UserFreindFinderAccount userFreindFinderAccount = new UserFreindFinderAccount();
-                    userFreindFinderAccount.userNo = tblUser.UserNo;
-                    //User General info
-                    userFreindFinderAccount.UserAccountGeneralInfo = new UserAccountGeneralInfo()
-                    {
-                        BioDescription = generalConfiguration.FirstOrDefault(e => e.TypeNo == 3).Ref1,
-                        DisplayName = generalConfiguration.FirstOrDefault(e => e.TypeNo == 3).Ref2,
-                        Age = generalConfiguration.FirstOrDefault(e => e.TypeNo == 3).Ref3,
-                        UserVerified = tblUser.UserType switch
-                        {
-                            2 => "Verified",
-                            3 => "Unverified",
-                            _ => "Unverified"
-                        }
-                    };
-                    //User Relationship Status
-                    userFreindFinderAccount.UserAccountRelashionshipStatus = new UserAccountRelashionshipStatus()
-                    {
-                        relashionshipStatusNo = (int)generalConfiguration.FirstOrDefault(e => e.TypeNo == 3).Int1,
-                        relashionshipStatus = tblRelationshipStatusTypes.FirstOrDefault(e => e.RelationshipStatusTypeNo == generalConfiguration.FirstOrDefault(e => e.TypeNo == 3).Int1).RelationshipStatusTypeName
-                    };
-                    //User Pictures
-                    userFreindFinderAccount.UserAccountPictures = new List<UserAccountPictures>();
-                    userFreindFinderAccount.UserAccountPictures.Add(new UserAccountPictures
-                    {
-                        pictureTypeNo = 1,
-                        base64Image = generalConfiguration.FirstOrDefault(e => e.TypeNo == 1).Ref1
-                    });
-                    userFreindFinderAccount.UserAccountPictures.Add(new UserAccountPictures
-                    {
-                        pictureTypeNo = 2,
-                        base64Image = generalConfiguration.FirstOrDefault(e => e.TypeNo == 1).Ref2
-                    });
-                    userFreindFinderAccount.UserAccountPictures.Add(new UserAccountPictures
-                    {
-                        pictureTypeNo = 3,
-                        base64Image = generalConfiguration.FirstOrDefault(e => e.TypeNo == 1).Ref3
-                    });
-                    //User Socials
-                    userFreindFinderAccount.UserAccountSocials = new List<UserAccountSocials>();
-                    if(generalConfiguration.FirstOrDefault(e => e.TypeNo == 4) != null)
-                    {
-                        if (generalConfiguration.FirstOrDefault(e => e.TypeNo == 4).Ref1 != null)
-                        {
-                            userFreindFinderAccount.UserAccountSocials.Add(new UserAccountSocials
-                            {
-                                socialTypeNo = 1,
-                                socialValue = generalConfiguration.FirstOrDefault(e => e.TypeNo == 4).Ref1
-                            });
-                        }
-                        if (generalConfiguration.FirstOrDefault(e => e.TypeNo == 4).Ref1 != null)
-                        {
-                            userFreindFinderAccount.UserAccountSocials.Add(new UserAccountSocials
-                            {
-                                socialTypeNo = 2,
-                                socialValue = generalConfiguration.FirstOrDefault(e => e.TypeNo == 4).Ref2
-                            });
-                        }
-                        if (generalConfiguration.FirstOrDefault(e => e.TypeNo == 4).Ref1 != null)
-                        {
-                            userFreindFinderAccount.UserAccountSocials.Add(new UserAccountSocials
-                            {
-                                socialTypeNo = 3,
-                                socialValue = generalConfiguration.FirstOrDefault(e => e.TypeNo == 4).Ref3
-                            });
-                        }
-                    }
-                    if (generalConfiguration.FirstOrDefault(e => e.TypeNo == 5) != null)
-                    {
-                        if (generalConfiguration.FirstOrDefault(e => e.TypeNo == 5).Ref1 != null)
-                        {
-                            userFreindFinderAccount.UserAccountSocials.Add(new UserAccountSocials
-                            {
-                                socialTypeNo = 4,
-                                socialValue = generalConfiguration.FirstOrDefault(e => e.TypeNo == 5).Ref1
-                            });
-                        }
-                    }
-                    
-                    //User Hobbies
-                    userFreindFinderAccount.UserAccountHobbies = new List<UserAccountHobbies>();
-                    foreach (var hobbyMapping in hobbyUserMappingTable)
-                    {
-                        TblHobby hobby = tblHobbies.FirstOrDefault(e => e.HobbyNo == hobbyMapping.HobbyNo);
-                        userFreindFinderAccount.UserAccountHobbies.Add(new UserAccountHobbies
-                        {
-                            HobbiesTypeNo = hobby.HobbyNo,
-                            HobbyName = hobby.HobbyName
-                        });
-                    }
 
-                    userFreindFinderAccounts.Add(userFreindFinderAccount);
-                }
-                
-            }
+            //    if(generalConfiguration.FirstOrDefault(e => e.TypeNo == 3) != null)
+            //    {
+            //        UserFreindFinderAccount userFreindFinderAccount = new UserFreindFinderAccount();
+            //        userFreindFinderAccount.userNo = tblUser.UserNo;
+            //        //User General info
+            //        userFreindFinderAccount.UserAccountGeneralInfo = new UserAccountGeneralInfo()
+            //        {
+            //            BioDescription = generalConfiguration.FirstOrDefault(e => e.TypeNo == 3).Ref1,
+            //            DisplayName = generalConfiguration.FirstOrDefault(e => e.TypeNo == 3).Ref2,
+            //            Age = generalConfiguration.FirstOrDefault(e => e.TypeNo == 3).Ref3,
+            //            UserVerified = tblUser.UserType switch
+            //            {
+            //                2 => "Verified",
+            //                3 => "Unverified",
+            //                _ => "Unverified"
+            //            }
+            //        };
+            //        //User Relationship Status
+            //        userFreindFinderAccount.UserAccountRelashionshipStatus = new UserAccountRelashionshipStatus()
+            //        {
+            //            relashionshipStatusNo = (int)generalConfiguration.FirstOrDefault(e => e.TypeNo == 3).Int1,
+            //            relashionshipStatus = tblRelationshipStatusTypes.FirstOrDefault(e => e.RelationshipStatusTypeNo == generalConfiguration.FirstOrDefault(e => e.TypeNo == 3).Int1).RelationshipStatusTypeName
+            //        };
+            //        //User Pictures
+            //        userFreindFinderAccount.UserAccountPictures = new List<UserAccountPictures>();
+            //        userFreindFinderAccount.UserAccountPictures.Add(new UserAccountPictures
+            //        {
+            //            pictureTypeNo = 1,
+            //            base64Image = generalConfiguration.FirstOrDefault(e => e.TypeNo == 1).Ref1
+            //        });
+            //        userFreindFinderAccount.UserAccountPictures.Add(new UserAccountPictures
+            //        {
+            //            pictureTypeNo = 2,
+            //            base64Image = generalConfiguration.FirstOrDefault(e => e.TypeNo == 1).Ref2
+            //        });
+            //        userFreindFinderAccount.UserAccountPictures.Add(new UserAccountPictures
+            //        {
+            //            pictureTypeNo = 3,
+            //            base64Image = generalConfiguration.FirstOrDefault(e => e.TypeNo == 1).Ref3
+            //        });
+            //        //User Socials
+            //        userFreindFinderAccount.UserAccountSocials = new List<UserAccountSocials>();
+            //        if(generalConfiguration.FirstOrDefault(e => e.TypeNo == 4) != null)
+            //        {
+            //            if (generalConfiguration.FirstOrDefault(e => e.TypeNo == 4).Ref1 != null)
+            //            {
+            //                userFreindFinderAccount.UserAccountSocials.Add(new UserAccountSocials
+            //                {
+            //                    socialTypeNo = 1,
+            //                    socialValue = generalConfiguration.FirstOrDefault(e => e.TypeNo == 4).Ref1
+            //                });
+            //            }
+            //            if (generalConfiguration.FirstOrDefault(e => e.TypeNo == 4).Ref1 != null)
+            //            {
+            //                userFreindFinderAccount.UserAccountSocials.Add(new UserAccountSocials
+            //                {
+            //                    socialTypeNo = 2,
+            //                    socialValue = generalConfiguration.FirstOrDefault(e => e.TypeNo == 4).Ref2
+            //                });
+            //            }
+            //            if (generalConfiguration.FirstOrDefault(e => e.TypeNo == 4).Ref1 != null)
+            //            {
+            //                userFreindFinderAccount.UserAccountSocials.Add(new UserAccountSocials
+            //                {
+            //                    socialTypeNo = 3,
+            //                    socialValue = generalConfiguration.FirstOrDefault(e => e.TypeNo == 4).Ref3
+            //                });
+            //            }
+            //        }
+            //        if (generalConfiguration.FirstOrDefault(e => e.TypeNo == 5) != null)
+            //        {
+            //            if (generalConfiguration.FirstOrDefault(e => e.TypeNo == 5).Ref1 != null)
+            //            {
+            //                userFreindFinderAccount.UserAccountSocials.Add(new UserAccountSocials
+            //                {
+            //                    socialTypeNo = 4,
+            //                    socialValue = generalConfiguration.FirstOrDefault(e => e.TypeNo == 5).Ref1
+            //                });
+            //            }
+            //        }
+
+            //        //User Hobbies
+            //        userFreindFinderAccount.UserAccountHobbies = new List<UserAccountHobbies>();
+            //        foreach (var hobbyMapping in hobbyUserMappingTable)
+            //        {
+            //            TblHobby hobby = tblHobbies.FirstOrDefault(e => e.HobbyNo == hobbyMapping.HobbyNo);
+            //            userFreindFinderAccount.UserAccountHobbies.Add(new UserAccountHobbies
+            //            {
+            //                HobbiesTypeNo = hobby.HobbyNo,
+            //                HobbyName = hobby.HobbyName
+            //            });
+            //        }
+
+            //        userFreindFinderAccounts.Add(userFreindFinderAccount);
+            //    }
+
+        }
 
 
 
@@ -164,12 +240,11 @@ namespace PrideLink.Server.Helpers
             //    }   
             //}
 
-            return userFreindFinderAccounts;
-        }
-        private List<int> GetAllLocationWithinRange(UserLocationData userLocation, List<string> roles)
-        {
-            return _locationInterface.GetLocation(userLocation, roles);
-        }
+    
+        //private List<int> GetAllLocationWithinRange(UserLocationData userLocation, List<string> roles)
+        //{
+        //    return _locationInterface.GetLocation(userLocation, roles);
+        //}
         private UserAccountGeneralInfo? GetUserAccountGeneralInfo(int userNo)
         {
             try

@@ -31,12 +31,25 @@ public partial class MasContext : DbContext
 
     public virtual DbSet<TblUserRoleType> TblUserRoleTypes { get; set; }
 
+    public virtual DbSet<VWUserFriendFinderProfile> VWUserFriendFinderProfile { get; set; }
+    public virtual DbSet<VWUserHobbies> VWUserHobbies { get; set; }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
         => optionsBuilder.UseSqlServer("Server=tcp:maddisonbailey.database.windows.net,1433;Database=MAS;User ID=Maddi;Password=Cobilove19;Trusted_Connection=False;Encrypt=True;");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<VWUserHobbies>(entity =>
+        {
+            entity.HasNoKey(); // since views don't have a primary key
+            entity.ToView("VWUserHobbies"); // name of the SQL view
+        });
+        modelBuilder.Entity<VWUserFriendFinderProfile>(entity =>
+        {
+            entity.HasNoKey(); // since views don't have a primary key
+            entity.ToView("VWUserFriendFinderProfile"); // name of the SQL view
+        });
         modelBuilder.Entity<TblGeneralConfiguration>(entity =>
         {
             entity.HasKey(e => e.GeneralConfigurationNo).HasName("PK__tblGener__ECC2A6D23C21B5C5");

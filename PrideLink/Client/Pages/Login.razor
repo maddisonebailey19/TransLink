@@ -14,82 +14,100 @@
 <h3>Login</h3>
 <div class="container d-flex justify-content-center align-items-center vh-100">
     <div class="card border-primary mb-3" style="max-width: 30rem;">
+        @if (!createLogin)
+        {
         <div class="card-header">Login</div>
-        <div class="card-body">
-            @if (!attemptedLogin)
-            {
+            <div class="card-body">
                 @if (invalidUserName != null)
                 {
-                    <p>@invalidUserName</p>
+                    <label for="userName">@invalidUserName</label>
                 }
-                <label for="userName">Enter UserName:</label>
+                <label for="userName">Email:</label>
                 <input type="email" id="userName" class="form-control" @bind="loginDetails.userName" />
                 <p></p>
                 <label for="password">Enter Password:</label>
                 <input type="password" id="password" class="form-control" @bind="loginDetails.password" />
                 <p></p>
-                <div class="d-flex justify-content-center mt-3">
-                    @if (!createLogin)
-                    {
-                        <button type="button" class="btn btn-primary" style="width: 120px; margin-right: 10px;" @onclick="CheckLogin">Login</button>
-                        <button type="button" class="btn btn-primary" style="width: 120px" @onclick="CreateLogin">Create User</button>
-                    }
-                    else
-                    {
-                        <button type="button" class="btn btn-primary" style="width: 120px" @onclick="SetupUser">Create Login</button>
-                    }
+
+                <button type="button" class="btn btn-primary" style="width: 120px; margin-right: 10px;" @onclick="CheckLogin">Login</button>
+                <button type="button" class="btn btn-primary" style="width: 120px" @onclick="CreateLogin">Create User</button>
+            </div>
+        }
+        else
+        {
+            <div class="card-header">Create Login</div>
+            <div class="card-body">
+                @if (invalidUserName != null)
+                {
+                    <label for="userName">@invalidUserName</label>
+                }
+                <label for="userName">Email:</label>
+                <input type="email" id="userName" class="form-control" @bind="loginDetails.userName" />
+                <p></p>
+                <label for="password">Enter Password:</label>
+                <input type="password" id="password" class="form-control" @bind="loginDetails.password" />
+                <p></p>
+                <div class="d-flex justify-content-center">
+                    <button type="button" class="btn btn-primary" style="width: 120px" @onclick="SetupUser">
+                        Create User
+                    </button>
                 </div>
-            }
-            else
-            {
-                <h2>UserName or Password was invalid</h2>
-                <div class="d-flex justify-content-center mt-3">
-                    <button type="button" class="btn btn-primary" style="width: 150px" @onclick="ReTry">Retry</button>
-                    <button type="button" class="btn btn-primary" style="width: 150px" @onclick="CreateLogin">Create User</button>
-                </div>
-            }
-        </div>
+
+                
+            </div>
+        }
+
     </div>
 </div>
 @code {
     private bool attemptedLogin = false;
     private bool createLogin = false;
     private bool loginCreated = false;
+    private bool usernameInvalid = false;
     private string? invalidUserName = null;
     LoginDetail loginDetails = new LoginDetail();
 
     private async void CheckLogin()
     {
         string urlString = "?userName=" + loginDetails.userName + "&password=" + loginDetails.password;
-        var response = await _Http.GetAsync("api/Login/Login-Checker" + urlString);
-        if (response.IsSuccessStatusCode)
+        if (loginDetails.userName.Contains("@") && loginDetails.userName.Contains("."))
         {
-            // jwtToken result = await response.Content.ReadFromJsonAsync<jwtToken>();
-            // _JS.InvokeVoidAsync("localStorage.setItem", "Token", JsonSerializer.Serialize(result));
-            if (loginCreated)
+            var response = await _Http.GetAsync("api/Login/Login-Checker" + urlString);
+            if (response.IsSuccessStatusCode)
             {
-                _Navigation.NavigateTo("/TermsAndConditions");
+                // jwtToken result = await response.Content.ReadFromJsonAsync<jwtToken>();
+                // _JS.InvokeVoidAsync("localStorage.setItem", "Token", JsonSerializer.Serialize(result));
+                var emailResponse = await _Http.GetAsync("api/General/SendEmail");
+                if (loginCreated)
+                {
+                    _Navigation.NavigateTo("/TermsAndConditions");
+                }
+                else
+                {
+                    _Navigation.NavigateTo("/");
+                }
+                var userNoResponse = await _Http.GetAsync("api/Login/GetUserID");
+                if (userNoResponse.IsSuccessStatusCode)
+                {
+                    string userNo = await userNoResponse.Content.ReadAsStringAsync();
+                    _loginStatus.userNo = userNo;
+                    _loginStatus.NotifyStateChanged();
+                    await _notificationService.InitializeAsync(userNo, _Navigation);
+                }
+
+
             }
             else
             {
-                _Navigation.NavigateTo("/");
+                attemptedLogin = true;
+                StateHasChanged();
             }
-            var userNoResponse = await _Http.GetAsync("api/Login/GetUserID");
-            if (userNoResponse.IsSuccessStatusCode)
-            {
-                string userNo = await userNoResponse.Content.ReadAsStringAsync();
-                _loginStatus.userNo = userNo;
-                _loginStatus.NotifyStateChanged();
-                await _notificationService.InitializeAsync(userNo, _Navigation);
-            }
-            
-            
         }
         else
         {
-            attemptedLogin = true;
-            StateHasChanged();
+            invalidUserName = "invalid email";
         }
+
     }
 
     // Changed to return Task so errors can be observed and UI updated reliably
@@ -100,6 +118,14 @@
 
         if (response.IsSuccessStatusCode)
         {
+            List<(string Name, string value)> emailContent = new List<(string Name, string value)>
+            {
+                ("@emailContentNo", "1"),
+                ("@to", loginDetails.userName),
+                ("@subject", "Welcome to PrideLink!"),
+                ("@userName", loginDetails.userName)
+            };
+
             UserCreated result = await response.Content.ReadFromJsonAsync<UserCreated>();
             if (result.userNo == -1)
             {
@@ -119,12 +145,12 @@
         // Handle known server responses (422 used by API when username exists)
         if (response.StatusCode == HttpStatusCode.UnprocessableEntity)
         {
-            invalidUserName = "Username already taken";
+            invalidUserName = "Email already taken";
         }
         else if (response.StatusCode == HttpStatusCode.Conflict)
         {
             // alternative common status code for duplicates
-            invalidUserName = "Username already taken";
+            invalidUserName = "Email already taken";
         }
         else
         {

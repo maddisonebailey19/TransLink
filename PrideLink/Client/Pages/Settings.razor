@@ -1,6 +1,222 @@
-﻿@page "/AccountSettings"
+﻿@inject HttpClient _Http
+@page "/AccountSettings"
 <h3>Account Settings</h3>
 
-@code {
+@if (isLoading)
+{
+    <LoadingView Percentage="loadingPercentage" LoadingText="Loading, please wait..." CurrentStepText="@currentStep" />
+}
+else
+{
+    <div class="accordion" id="accordionExample">
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="AccountInformation">
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAccountInformation" aria-expanded="true" aria-controls="collapseAccountInformation">
+                    Account Information
+                </button>
+            </h2>
+            <div id="collapseAccountInformation" class="accordion-collapse collapse show" aria-labelledby="AccountInformation" data-bs-parent="#accordionExample">
+                <div class="accordion-body">
+                    @if (errorSavingEmail)
+                    {
+                        <div class="mb-3">
+                            <p class="form-label fw-semibold text-danger">@errorMessage</p>
+                        </div>
+                    }
+                    <div class="mb-3">
+                        <label for="currentEmail" class="form-label fw-semibold">Current Email</label>
+                        <input type="email" id="currentEmail" class="@emailInputClass[0]" placeholder="Enter current email" @bind="currentEmail" />
+                    </div>
+                    <div class="mb-3">
+                        <label for="newEmail" class="form-label fw-semibold">New Email</label>
+                        <input type="email" id="newEmail" class="@emailInputClass[1]" placeholder="Enter new email" @bind="newEmail" />
+                    </div>
+                    <div class="d-flex justify-content-end">
+                        <button type="button" class="btn btn-outline-secondary me-2" @onclick="CloseEmail">Cancel</button>
+                        <button type="button" class="btn btn-primary" @onclick="SaveEmail">Save Changes</button>
+                    </div>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="Security">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSecurity" aria-expanded="false" aria-controls="collapseSecurity">
+                        Security
+                    </button>
+                </h2>
+                <div id="collapseSecurity" class="accordion-collapse collapse" aria-labelledby="Security" data-bs-parent="#accordionExample">
+                    <div class="accordion-body">
+                        <div class="card p-3 shadow-sm border-0 bg-light">
+                            <h5 class="mb-3">Change Password</h5>
+                            @if (errorSavingPassword)
+                            {
+                                <div class="mb-3">
+                                    <p class="form-label fw-semibold text-danger">@errorMessage</p>
+                                </div>
+                            }
+                            <div class="mb-3">
+                                <label for="currentPassword" class="form-label fw-semibold">Current Password</label>
+                                <input type="password" id="currentPassword" class="@passwordInputClass[0]" placeholder="Enter current password" @bind="currentPassword" />
+                            </div>
 
+                            <div class="mb-3">
+                                <label for="NewPassword" class="form-label fw-semibold">New Password</label>
+                                <input type="password" id="NewPassword" class="@passwordInputClass[1]" placeholder="Enter new password" @bind="newPassword" />
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="ConfirmPassword" class="form-label fw-semibold">Confirm New Password</label>
+                                <input type="password" id="ConfirmPassword" class="@passwordInputClass[2]" placeholder="Re-enter new password" @bind="confirmPassword" />
+                            </div>
+
+                            <div class="d-flex justify-content-end">
+                                <button type="button" class="btn btn-outline-secondary me-2" @onclick="ClosePassword">Cancel</button>
+                                <button type="button" class="btn btn-primary" @onclick="SavePassword">Save Changes</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="Notifications">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseNotifications" aria-expanded="false" aria-controls="collapseNotifications">
+                        Notifications
+                    </button>
+                </h2>
+                <div id="collapseNotifications" class="accordion-collapse collapse" aria-labelledby="Notifications" data-bs-parent="#accordionExample">
+                    <div class="accordion-body">
+                    </div>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="AccountManagement">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAccountManagement" aria-expanded="false" aria-controls="collapseAccountManagement">
+                        Account Management
+                    </button>
+                </h2>
+                <div id="collapseAccountManagement" class="accordion-collapse collapse" aria-labelledby="AccountManagement" data-bs-parent="#accordionExample">
+                    <div class="accordion-body">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@code {
+    private bool isLoading = false;
+    private double loadingPercentage = 0;
+    private string currentStep;
+    private int loadingPercentageIncrement = 0;
+    private string errorMessage;
+
+    //---       Security        ---//
+
+    private string currentPassword;
+    private string newPassword;
+    private string confirmPassword;
+    private bool errorSavingPassword = false;
+    List<string> passwordInputClass = new List<string>()
+    {
+        "form-control", //Current password
+        "form-control", //New Password
+        "form-control"  //Confirm Password
+    };
+
+    //---   Account Information   ---//
+
+    private string currentEmail;
+    private string newEmail;
+    private bool errorSavingEmail = false;
+    List<string> emailInputClass = new List<string>()
+    {
+        "form-control", //Current password
+        "form-control", //New Password
+    };
+
+    private async void SavePassword()
+    {
+        var passwordCheckResponse = await _Http.GetAsync("api/AccountSettings/IsPasswordCorrect/?password=" + currentPassword);
+        if (passwordCheckResponse.IsSuccessStatusCode)
+        {
+            if (newPassword == confirmPassword)
+            {
+                passwordInputClass[0] = "form-control";
+                passwordInputClass[1] = "form-control";
+                passwordInputClass[2] = "form-control";
+                currentPassword = "";
+                newPassword = "";
+                confirmPassword = "";
+                errorSavingPassword = false;
+                StateHasChanged();
+                var passwordUpdatedResponse = await _Http.GetAsync("api/AccountSettings/Update-Password/?password=" + currentPassword);
+            }
+            else
+            {
+                passwordInputClass[1] = "form-control is-invalid";
+                passwordInputClass[2] = "form-control is-invalid";
+                errorSavingPassword = true;
+                errorMessage = "New password does not match. Check new password";
+                StateHasChanged();
+            }
+        }
+        else
+        {
+            passwordInputClass[0] = "form-control is-invalid";
+            errorSavingPassword = true;
+            errorMessage = "Password is incorrect";
+
+            StateHasChanged();
+        }
+    }
+
+    private async void ClosePassword()
+    {
+        passwordInputClass[0] = "form-control";
+        passwordInputClass[1] = "form-control";
+        passwordInputClass[2] = "form-control";
+        errorSavingPassword = false;
+        currentPassword = "";
+        newPassword = "";
+        confirmPassword = "";
+        StateHasChanged();
+    }
+
+    private async void SaveEmail()
+    {
+        var emailCheckResponse = await _Http.GetAsync("api/AccountSettings/IsEmailCorrect/?email=" + currentEmail);
+        if (emailCheckResponse.IsSuccessStatusCode)
+        {
+            if(newEmail.Contains("@") && newEmail.Contains("."))
+            {
+                var emailUpdatedResponse = await _Http.PatchAsync("api/AccountSettings/Update-Email/?email=" + newEmail, null);
+                currentEmail = "";
+                newEmail = "";
+                errorSavingEmail = false;
+                StateHasChanged();
+
+            }
+            else
+            {
+                errorSavingEmail = true;
+                emailInputClass[1] = "form-control is-invalid";
+                errorMessage = "New email is not valid";
+                StateHasChanged();
+            }
+        }
+        else
+        {
+            errorSavingEmail = true;
+            emailInputClass[0] = "form-control is-invalid";
+            errorMessage = "Current email is incorrect";
+            StateHasChanged();
+        }
+    }
+
+    private async void CloseEmail()
+    {
+        errorSavingEmail = false;
+        emailInputClass[0] = "form-control";
+        emailInputClass[1] = "form-control";
+        currentEmail = "";
+        newEmail = "";
+    }
 }

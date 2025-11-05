@@ -95,6 +95,8 @@ builder.Services.AddScoped<IUserInfoInterface, UserInfoHelper>();
 builder.Services.AddScoped<IGeneralInterface, GeneralHelper>();
 builder.Services.AddScoped<ILocationInterface, LocationHelper>();
 builder.Services.AddScoped<IFreindFinderUserInfoInterface, FreindFinderUserAccountHelper>();
+builder.Services.AddScoped<IGmailInterface, GmailHelper>();
+builder.Services.AddScoped<IAccountSettingsInterface, AccountSettingsHelper>();
 
 var app = builder.Build();
 
