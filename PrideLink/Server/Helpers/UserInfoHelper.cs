@@ -123,16 +123,24 @@ namespace PrideLink.Server.Helpers
                 var entity = context.TblGeneralConfigurations.FirstOrDefault(e => e.UserNo == userNo && e.TypeNo == 3);
                 if(entity != null)
                 {
-                    var userRelashionType = context.TblRelationshipStatusTypes.FirstOrDefault(e => e.RelationshipStatusTypeNo == entity.Int1);
-                    userRelationshipStatus.relationshipStatusNo = userRelashionType.RelationshipStatusTypeNo;
-                    userRelationshipStatus.relationshipStatus = userRelashionType.RelationshipStatusTypeName;
+                    if (entity.Int1 != null)
+                    {
+                        var userRelashionType = context.TblRelationshipStatusTypes.FirstOrDefault(e => e.RelationshipStatusTypeNo == entity.Int1);
+                        userRelationshipStatus.relationshipStatusNo = userRelashionType.RelationshipStatusTypeNo;
+                        userRelationshipStatus.relationshipStatus = userRelashionType.RelationshipStatusTypeName;
 
-                    return userRelationshipStatus;
+                        return userRelationshipStatus;
+                    }
+                    else
+                    {
+                        return null;
+                    }
                 }
                 else
                 {
                     return null;
                 }
+                
                 //var entity = context.TblUserRelationshipStatuses.FirstOrDefault(e => e.UserNo == userNo);
                 //if (entity != null)
                 //{

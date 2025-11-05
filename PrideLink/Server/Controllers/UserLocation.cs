@@ -44,5 +44,55 @@ namespace PrideLink.Server.Controllers
             }
 
         }
+
+        [HttpGet]
+        [Authorize(Roles = "Admin,General")]
+        [Route("GetLocationFromCityAndTown")]
+        public IActionResult GetLocationFromCityAndTown()
+        {
+            var jwtToken = Request.Cookies["AuthToken"];
+
+            int userNo = int.Parse(_jWTHelper.GetUserNo(jwtToken));
+
+            UserLocationData location = _locationInterface.GetUserLocationFromTownAndCity(userNo);
+            if (location != null)
+            {
+                return Ok(location);
+            }
+            else
+            {
+                return BadRequest();
+            }
+
+        }
+
+        [HttpGet]
+        [Authorize(Roles = "Admin,General")]
+        [Route("AddTownAndCityToUser")]
+        public IActionResult AddTownAndCityToUser(int cityNo)
+        {
+            var jwtToken = Request.Cookies["AuthToken"];
+
+            int userNo = int.Parse(_jWTHelper.GetUserNo(jwtToken));
+
+            bool success = _locationInterface.AddTownAndCityToUser(userNo, cityNo);
+            if (success)
+            {
+                return Ok();
+            }
+            else
+            {
+                return BadRequest();
+            }
+                
+        }
+
+        [HttpGet]
+        [Authorize(Roles = "Admin,General")]
+        [Route("GetCityAndTowns")]
+        public IActionResult GetCityAndTowns()
+        {
+            return Ok(_locationInterface.GetTownCityLocations());
+        }
     }
 }

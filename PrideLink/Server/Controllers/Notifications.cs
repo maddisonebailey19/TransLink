@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using PrideLink.Server.Interfaces;
+using PrideLink.Shared.Notification;
+using System.Text.Json;
 
 namespace PrideLink.Server.Controllers
 {
@@ -14,11 +16,23 @@ namespace PrideLink.Server.Controllers
             _gmailInterface = gmailInterface;
         }
 
-        [HttpGet]
+        [HttpPost]
         [Route("SendEmail")]
-        public IActionResult SendEmail(List<(string Name, string value)> emailContents)
+        public IActionResult SendEmail(NotificationContent emailContentsJson)
         {
-            _gmailInterface.SendEmail(emailContents);
+            //NotificationContent emailContents = JsonSerializer.Deserialize<NotificationContent>(emailContentsJson);
+            //List<(string Name, string value)>
+            _gmailInterface.SendEmail(emailContentsJson);
+            return Ok();
+        }
+
+        [HttpPost]
+        [Route("VerificationSendEmail")]
+        public IActionResult VerificationSendEmail(NotificationContent emailContentsJson)
+        {
+            //NotificationContent emailContents = JsonSerializer.Deserialize<NotificationContent>(emailContentsJson);
+            //List<(string Name, string value)>
+            _gmailInterface.VerificationEmailSender(emailContentsJson);
             return Ok();
         }
     }

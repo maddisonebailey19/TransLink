@@ -5,14 +5,19 @@ namespace PrideLink.Server.Helpers
 {
     public class AccountSettingsHelper : IAccountSettingsInterface
     {
+        private readonly PasswordHelper _passwordHelper;
+        public AccountSettingsHelper(PasswordHelper passwordHelper)
+        {
+            _passwordHelper = passwordHelper;
+        }
         public string? CheckLoginCredWithUserNo(int userNo, string password)
         {
             using (var context = new MasContext())
             {
-                var entity = context.TblUsers.FirstOrDefault(e => e.UserNo == userNo && e.Password == password);
+                var entity = context.TblUsers.FirstOrDefault(e => e.UserNo == userNo);
                 if (entity != null)
                 {
-                    return entity.UserId;
+                    return _passwordHelper.VerifyPassword(password, entity.Password) ? entity.UserId : null;
                 }
                 else
                 {
@@ -61,7 +66,7 @@ namespace PrideLink.Server.Helpers
                 var entity = context.TblUsers.FirstOrDefault(e => e.UserNo == userNo);
                 if (entity != null)
                 {
-                    entity.Password = password;
+                    entity.Password = _passwordHelper.HashPassword(password);
                     context.SaveChanges();
                     return true;
                 }

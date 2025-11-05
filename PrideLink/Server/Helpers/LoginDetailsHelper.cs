@@ -8,19 +8,26 @@ namespace PrideLink.Server.Helpers
 {
     public class LoginDetailsHelper : ILoginInterface
     {
+        private readonly PasswordHelper _passwordHelper;
+        public LoginDetailsHelper(PasswordHelper passwordHelper)
+        {
+            _passwordHelper = passwordHelper;
+        }
         public string? CheckLoginCred(string userName, string password)
         {
             using(var context = new MasContext())
             {
-                var entity = context.TblUsers.FirstOrDefault(e => e.Login == userName && e.Password == password);
-                if(entity != null)
+                string cleanedUserName = userName.Split("@")[0];
+                var entity = context.TblUsers.FirstOrDefault(e => e.Login == cleanedUserName);
+                if (entity != null)
                 {
-                    return entity.UserId;
+                    return _passwordHelper.VerifyPassword(password, entity.Password) ? entity.UserId : null;
                 }
                 else
                 {
                     return null;
                 }
+                
             }
         }
 
@@ -34,9 +41,10 @@ namespace PrideLink.Server.Helpers
                     TblUser tblUser = new TblUser
                     {
                         UserId = Guid.NewGuid().ToString(),
-                        Login = userName,
-                        Password = password,
+                        Login = userName.Split("@")[0],
+                        Password = _passwordHelper.HashPassword(password),
                         UserType = 3,
+                        Email = userName,
                         Active = true,
                     };
                     context.Add(tblUser);
@@ -49,7 +57,7 @@ namespace PrideLink.Server.Helpers
 
                         UserRoleTypeNo = 2,
                         UserNo = newUserID,
-                        RoleAddedByUserNo = 8
+                        RoleAddedByUserNo = 1
                     };
 
                     context.Add(tblUserRoleMappingTable); 

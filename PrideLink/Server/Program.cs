@@ -8,6 +8,7 @@ using PrideLink.Server.Controllers;
 using PrideLink.Server.Helpers;
 using PrideLink.Server.Hubs;
 using PrideLink.Server.Interfaces;
+using PrideLink.Server.Internal_Models;
 using PrideLink.Server.TransLinkDataBase;
 using System;
 using System.Text;
@@ -97,7 +98,9 @@ builder.Services.AddScoped<ILocationInterface, LocationHelper>();
 builder.Services.AddScoped<IFreindFinderUserInfoInterface, FreindFinderUserAccountHelper>();
 builder.Services.AddScoped<IGmailInterface, GmailHelper>();
 builder.Services.AddScoped<IAccountSettingsInterface, AccountSettingsHelper>();
-
+builder.Services.AddScoped<PasswordHelper>();
+builder.Services.AddSingleton<EmailVerificationStore>();
+builder.Services.AddScoped<Random>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

@@ -15,6 +15,10 @@ public partial class MasContext : DbContext
     {
     }
 
+    public virtual DbSet<TblCity> TblCities { get; set; }
+
+    public virtual DbSet<TblEmailContent> TblEmailContents { get; set; }
+
     public virtual DbSet<TblGeneralConfiguration> TblGeneralConfigurations { get; set; }
 
     public virtual DbSet<TblGeneralConfigurationType> TblGeneralConfigurationTypes { get; set; }
@@ -23,20 +27,25 @@ public partial class MasContext : DbContext
 
     public virtual DbSet<TblHobbyUserMappingTable> TblHobbyUserMappingTables { get; set; }
 
+    public virtual DbSet<TblNewsCategoryNo> TblNewsCategoryNos { get; set; }
+
+    public virtual DbSet<TblNewsLinkNo> TblNewsLinkNos { get; set; }
+
     public virtual DbSet<TblRelationshipStatusType> TblRelationshipStatusTypes { get; set; }
+
+    public virtual DbSet<TblTransLinkNews> TblTransLinkNews { get; set; }
 
     public virtual DbSet<TblUser> TblUsers { get; set; }
 
     public virtual DbSet<TblUserRoleMappingTable> TblUserRoleMappingTables { get; set; }
 
     public virtual DbSet<TblUserRoleType> TblUserRoleTypes { get; set; }
-
     public virtual DbSet<VWUserFriendFinderProfile> VWUserFriendFinderProfile { get; set; }
     public virtual DbSet<VWUserHobbies> VWUserHobbies { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseSqlServer("Server=tcp:maddisonbailey.database.windows.net,1433;Database=MAS;User ID=Maddi;Password=Cobilove19;Trusted_Connection=False;Encrypt=True;");
+        => optionsBuilder.UseSqlServer("Server=maddisonbailey.database.windows.net;Database=MAS;User ID=Maddi;Password=Cobilove19; Trusted_Connection=false;Encrypt=True; ", x => x.UseNetTopologySuite());
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -50,6 +59,77 @@ public partial class MasContext : DbContext
             entity.HasNoKey(); // since views don't have a primary key
             entity.ToView("VWUserFriendFinderProfile"); // name of the SQL view
         });
+        modelBuilder.Entity<TblCity>(entity =>
+        {
+            entity.HasKey(e => e.CityNo);
+
+            entity.ToTable("tblCity", tb => tb.HasTrigger("tblCity_SystemTrigger"));
+
+            entity.HasIndex(e => e.CityName, "IX_tblCityName").IsUnique();
+
+            entity.Property(e => e.Active)
+                .IsRequired()
+                .HasDefaultValueSql("((1))");
+            entity.Property(e => e.CityName)
+                .HasMaxLength(50)
+                .IsUnicode(false);
+            entity.Property(e => e.TSystemCreateDate)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime")
+                .HasColumnName("t_SystemCreateDate");
+            entity.Property(e => e.TSystemCreateProcedureId)
+                .HasDefaultValueSql("(@@procid)")
+                .HasColumnName("t_SystemCreateProcedureId");
+            entity.Property(e => e.TSystemLastModifiedUserName)
+                .HasMaxLength(500)
+                .IsUnicode(false)
+                .HasDefaultValueSql("(suser_sname())")
+                .HasColumnName("t_SystemLastModifiedUserName");
+            entity.Property(e => e.TSystemModifiedCount)
+                .HasDefaultValueSql("((0))")
+                .HasColumnName("t_SystemModifiedCount");
+            entity.Property(e => e.TSystemModifiedDate)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime")
+                .HasColumnName("t_SystemModifiedDate");
+        });
+
+        modelBuilder.Entity<TblEmailContent>(entity =>
+        {
+            entity.HasKey(e => e.EmailContentNo);
+
+            entity.ToTable("tblEmailContent", tb => tb.HasTrigger("tblEmailContent_SystemTrigger"));
+
+            entity.HasIndex(e => e.EmailContentName, "IX_tblEmailContentName").IsUnique();
+
+            entity.Property(e => e.Active)
+                .IsRequired()
+                .HasDefaultValueSql("((1))");
+            entity.Property(e => e.EmailContent).UseCollation("Latin1_General_100_CI_AS_SC_UTF8");
+            entity.Property(e => e.EmailContentName)
+                .HasMaxLength(50)
+                .IsUnicode(false);
+            entity.Property(e => e.TSystemCreateDate)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime")
+                .HasColumnName("t_SystemCreateDate");
+            entity.Property(e => e.TSystemCreateProcedureId)
+                .HasDefaultValueSql("(@@procid)")
+                .HasColumnName("t_SystemCreateProcedureId");
+            entity.Property(e => e.TSystemLastModifiedUserName)
+                .HasMaxLength(500)
+                .IsUnicode(false)
+                .HasDefaultValueSql("(suser_sname())")
+                .HasColumnName("t_SystemLastModifiedUserName");
+            entity.Property(e => e.TSystemModifiedCount)
+                .HasDefaultValueSql("((0))")
+                .HasColumnName("t_SystemModifiedCount");
+            entity.Property(e => e.TSystemModifiedDate)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime")
+                .HasColumnName("t_SystemModifiedDate");
+        });
+
         modelBuilder.Entity<TblGeneralConfiguration>(entity =>
         {
             entity.HasKey(e => e.GeneralConfigurationNo).HasName("PK__tblGener__ECC2A6D23C21B5C5");
@@ -228,6 +308,73 @@ public partial class MasContext : DbContext
                 .HasConstraintName("FK__tblHobbyU__UserN__1E5A75C5");
         });
 
+        modelBuilder.Entity<TblNewsCategoryNo>(entity =>
+        {
+            entity.HasKey(e => e.NewsCategoryNo);
+
+            entity.ToTable("tblNewsCategoryNo", tb => tb.HasTrigger("tblNewsCategoryNo_SystemTrigger"));
+
+            entity.HasIndex(e => e.NewsCategoryName, "IX_tblNewsCategoryNoName").IsUnique();
+
+            entity.Property(e => e.NewsCategoryName)
+                .HasMaxLength(50)
+                .IsUnicode(false);
+            entity.Property(e => e.TSystemCreateDate)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime")
+                .HasColumnName("t_SystemCreateDate");
+            entity.Property(e => e.TSystemCreateProcedureId)
+                .HasDefaultValueSql("(@@procid)")
+                .HasColumnName("t_SystemCreateProcedureId");
+            entity.Property(e => e.TSystemLastModifiedUserName)
+                .HasMaxLength(500)
+                .IsUnicode(false)
+                .HasDefaultValueSql("(suser_sname())")
+                .HasColumnName("t_SystemLastModifiedUserName");
+            entity.Property(e => e.TSystemModifiedCount)
+                .HasDefaultValueSql("((0))")
+                .HasColumnName("t_SystemModifiedCount");
+            entity.Property(e => e.TSystemModifiedDate)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime")
+                .HasColumnName("t_SystemModifiedDate");
+        });
+
+        modelBuilder.Entity<TblNewsLinkNo>(entity =>
+        {
+            entity.HasKey(e => e.NewsLinkNo).HasName("PK_tblNewsLink");
+
+            entity.ToTable("tblNewsLinkNo", tb => tb.HasTrigger("tblNewsLink_SystemTrigger"));
+
+            entity.HasIndex(e => e.NewsLinkName, "IX_tblNewsLinkName").IsUnique();
+
+            entity.Property(e => e.NewsLink)
+                .HasMaxLength(100)
+                .IsUnicode(false);
+            entity.Property(e => e.NewsLinkName)
+                .HasMaxLength(50)
+                .IsUnicode(false);
+            entity.Property(e => e.TSystemCreateDate)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime")
+                .HasColumnName("t_SystemCreateDate");
+            entity.Property(e => e.TSystemCreateProcedureId)
+                .HasDefaultValueSql("(@@procid)")
+                .HasColumnName("t_SystemCreateProcedureId");
+            entity.Property(e => e.TSystemLastModifiedUserName)
+                .HasMaxLength(500)
+                .IsUnicode(false)
+                .HasDefaultValueSql("(suser_sname())")
+                .HasColumnName("t_SystemLastModifiedUserName");
+            entity.Property(e => e.TSystemModifiedCount)
+                .HasDefaultValueSql("((0))")
+                .HasColumnName("t_SystemModifiedCount");
+            entity.Property(e => e.TSystemModifiedDate)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime")
+                .HasColumnName("t_SystemModifiedDate");
+        });
+
         modelBuilder.Entity<TblRelationshipStatusType>(entity =>
         {
             entity.HasKey(e => e.RelationshipStatusTypeNo).HasName("PK__tblRelat__CE29A63BE2818039");
@@ -259,6 +406,60 @@ public partial class MasContext : DbContext
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime")
                 .HasColumnName("t_SystemModifiedDate");
+        });
+
+        modelBuilder.Entity<TblTransLinkNews>(entity =>
+        {
+            entity.HasKey(e => e.TransLinkNewsNo);
+
+            entity.ToTable("tblTransLinkNews", tb => tb.HasTrigger("tblTransLinkNews_SystemTrigger"));
+
+            entity.Property(e => e.Active)
+                .IsRequired()
+                .HasDefaultValueSql("((1))");
+            entity.Property(e => e.Content)
+                .HasMaxLength(500)
+                .IsUnicode(false);
+            entity.Property(e => e.DatePosted)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("date");
+            entity.Property(e => e.ExpireData).HasColumnType("date");
+            entity.Property(e => e.TSystemCreateDate)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime")
+                .HasColumnName("t_SystemCreateDate");
+            entity.Property(e => e.TSystemCreateProcedureId)
+                .HasDefaultValueSql("(@@procid)")
+                .HasColumnName("t_SystemCreateProcedureId");
+            entity.Property(e => e.TSystemLastModifiedUserName)
+                .HasMaxLength(500)
+                .IsUnicode(false)
+                .HasDefaultValueSql("(suser_sname())")
+                .HasColumnName("t_SystemLastModifiedUserName");
+            entity.Property(e => e.TSystemModifiedCount)
+                .HasDefaultValueSql("((0))")
+                .HasColumnName("t_SystemModifiedCount");
+            entity.Property(e => e.TSystemModifiedDate)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime")
+                .HasColumnName("t_SystemModifiedDate");
+            entity.Property(e => e.Title)
+                .HasMaxLength(50)
+                .IsUnicode(false);
+
+            entity.HasOne(d => d.CityNoNavigation).WithMany(p => p.TblTransLinkNews)
+                .HasForeignKey(d => d.CityNo)
+                .HasConstraintName("FK__tblTransL__CityN__6ECB5E34");
+
+            entity.HasOne(d => d.NewsCategoryNoNavigation).WithMany(p => p.TblTransLinkNews)
+                .HasForeignKey(d => d.NewsCategoryNo)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__tblTransL__NewsC__6CE315C2");
+
+            entity.HasOne(d => d.NewsLinkNoNavigation).WithMany(p => p.TblTransLinkNews)
+                .HasForeignKey(d => d.NewsLinkNo)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__tblTransL__NewsL__6DD739FB");
         });
 
         modelBuilder.Entity<TblUser>(entity =>

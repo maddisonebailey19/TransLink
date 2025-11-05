@@ -4,6 +4,7 @@
 @using System.Text.Json
 @using System.Net
 @using System.Net.Http.Headers
+@using PrideLink.Shared.Notification
 
 @inject LoginStatus _loginStatus;
 @inject IJSRuntime _JS
@@ -20,7 +21,7 @@
             <div class="card-body">
                 @if (invalidUserName != null)
                 {
-                    <label for="userName">@invalidUserName</label>
+                    <p class="text-danger">@invalidUserName</p>
                 }
                 <label for="userName">Email:</label>
                 <input type="email" id="userName" class="form-control" @bind="loginDetails.userName" />
@@ -39,7 +40,7 @@
             <div class="card-body">
                 @if (invalidUserName != null)
                 {
-                    <label for="userName">@invalidUserName</label>
+                    <p class="text-danger">@invalidUserName</p>
                 }
                 <label for="userName">Email:</label>
                 <input type="email" id="userName" class="form-control" @bind="loginDetails.userName" />
@@ -47,46 +48,94 @@
                 <label for="password">Enter Password:</label>
                 <input type="password" id="password" class="form-control" @bind="loginDetails.password" />
                 <p></p>
-                <div class="d-flex justify-content-center">
-                    <button type="button" class="btn btn-primary" style="width: 120px" @onclick="SetupUser">
-                        Create User
-                    </button>
-                </div>
+                @if (!verifyEmailSent)
+                {
+                    <div class="d-flex justify-content-center">
+                        <button type="button" class="btn btn-primary" style="width: 120px" @onclick="SetupUser">
+                            Create User
+                        </button>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center">
+                        <label for="verificationNo" class="form-label fw-semibold">Enter Verification Code:</label>
+                        <input type="text"
+                               id="verificationNo"
+                               class="form-control text-center mx-auto"
+                               style="max-width: 200px; font-size: 1.2rem; letter-spacing: 3px;"
+                               @bind="verificationCode" />
+
+                        <div class="d-flex justify-content-center mt-3">
+                            <button type="button"
+                                    class="btn btn-primary px-4"
+                                    style="border-radius: 6px;"
+                                    @onclick="NewUserLogin">
+                                Login
+                            </button>
+                        </div>
+                    </div>
+                }
+                
 
                 
             </div>
         }
-
+        @* <div class="d-flex justify-content-center">
+            <button type="button" class="btn btn-primary" style="width: 120px" @onclick="TestEmail">
+                Test Email
+            </button>
+        </div> *@
     </div>
 </div>
 @code {
     private bool attemptedLogin = false;
     private bool createLogin = false;
+    private bool verifyEmailSent = false;
     private bool loginCreated = false;
     private bool usernameInvalid = false;
     private string? invalidUserName = null;
+    private int? verificationCode = null;
     LoginDetail loginDetails = new LoginDetail();
 
-    private async void CheckLogin()
+    // private async void TestEmail()
+    // {
+    //     NotificationContent notificationContent = new NotificationContent();
+    //     notificationContent.ToEmail = "ethanbailey65@gmail.com";
+    //     notificationContent.Subject = "🌈 Welcome to TransLink!";
+    //     notificationContent.EmailContentNo = 1;
+    //     notificationContent.EmailContents = new Dictionary<string, string>
+    //     {
+    //         { "@userName", "Ethan" }
+    //     };
+
+    //     //string emailContentJson = JsonSerializer.Serialize(notificationContent);
+    //     var emailResponse = await _Http.PostAsJsonAsync("api/Notifications/SendEmail", notificationContent);
+    // }
+    private async void NewUserLogin()
     {
-        string urlString = "?userName=" + loginDetails.userName + "&password=" + loginDetails.password;
+        string URL = "?userName=" + loginDetails.userName.Split("@")[0] + "&verificationCode=" + verificationCode;
+        var verificationCodeResponse = await _Http.GetAsync("api/Login/CheckVerificationCode" + URL);
+        if (verificationCodeResponse.IsSuccessStatusCode)
+        {
+            _Navigation.NavigateTo("/TermsAndConditions");
+        }
+        StateHasChanged();
+    }
+    private async void CheckLogin()
+    { 
+        invalidUserName = null;
         if (loginDetails.userName.Contains("@") && loginDetails.userName.Contains("."))
         {
+            string urlString = "?userName=" + loginDetails.userName + "&password=" + loginDetails.password;
             var response = await _Http.GetAsync("api/Login/Login-Checker" + urlString);
             if (response.IsSuccessStatusCode)
             {
                 // jwtToken result = await response.Content.ReadFromJsonAsync<jwtToken>();
                 // _JS.InvokeVoidAsync("localStorage.setItem", "Token", JsonSerializer.Serialize(result));
-                var emailResponse = await _Http.GetAsync("api/General/SendEmail");
-                if (loginCreated)
-                {
-                    _Navigation.NavigateTo("/TermsAndConditions");
-                }
-                else
-                {
-                    _Navigation.NavigateTo("/");
-                }
+
                 var userNoResponse = await _Http.GetAsync("api/Login/GetUserID");
+
                 if (userNoResponse.IsSuccessStatusCode)
                 {
                     string userNo = await userNoResponse.Content.ReadAsStringAsync();
@@ -95,17 +144,21 @@
                     await _notificationService.InitializeAsync(userNo, _Navigation);
                 }
 
+                _Navigation.NavigateTo("/");
+
 
             }
             else
             {
                 attemptedLogin = true;
+                invalidUserName = "Email or password is incorrect";
                 StateHasChanged();
             }
         }
         else
         {
-            invalidUserName = "invalid email";
+            invalidUserName = "Invalid email";
+            StateHasChanged();
         }
 
     }
@@ -118,13 +171,20 @@
 
         if (response.IsSuccessStatusCode)
         {
-            List<(string Name, string value)> emailContent = new List<(string Name, string value)>
+            NotificationContent notificationContent = new NotificationContent();
+            notificationContent.ToEmail = loginDetails.userName;
+            notificationContent.Subject = "🌈 Welcome to TransLink!";
+            notificationContent.EmailContentNo = 2;
+            notificationContent.EmailContents = new Dictionary<string, string>
             {
-                ("@emailContentNo", "1"),
-                ("@to", loginDetails.userName),
-                ("@subject", "Welcome to PrideLink!"),
-                ("@userName", loginDetails.userName)
+                { "@userName", loginDetails.userName.Split("@")[0] }
             };
+
+            var emailResponse = await _Http.PostAsJsonAsync("api/Notifications/VerificationSendEmail", notificationContent);
+            if(emailResponse.IsSuccessStatusCode)
+            {
+                verifyEmailSent = true;
+            }
 
             UserCreated result = await response.Content.ReadFromJsonAsync<UserCreated>();
             if (result.userNo == -1)
@@ -133,9 +193,10 @@
             }
             else
             {
-                attemptedLogin = false;
-                createLogin = false;
-                loginCreated = true;
+
+                // attemptedLogin = false;
+                // createLogin = false;
+                // loginCreated = true;
             }
 
             StateHasChanged();
@@ -169,6 +230,7 @@
 
     private async void CreateLogin()
     {
+        invalidUserName = null;
         attemptedLogin = false;
         createLogin = true;
         StateHasChanged();

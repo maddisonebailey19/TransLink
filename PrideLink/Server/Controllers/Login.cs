@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using PrideLink.Server.Helpers;
 using PrideLink.Server.Interfaces;
 using PrideLink.Server.Internal_Models;
+using PrideLink.Server.TransLinkDataBase;
 using PrideLink.Shared.LoginDetails;
 using RTools_NTS.Util;
 using System.Data;
@@ -20,12 +21,14 @@ namespace PrideLink.Server.Controllers
         private readonly ILoginInterface _loginInterface;
         private readonly IConfiguration _configuration;
         private readonly JWTHelper _jWTHelper;
+        private readonly EmailVerificationStore _emailVerificationStore;
 
-        public Login(ILoginInterface loginInterface, IConfiguration configuration, JWTHelper jWTHelper)
+        public Login(ILoginInterface loginInterface, IConfiguration configuration, JWTHelper jWTHelper, EmailVerificationStore emailVerificationStore)
         {
             _loginInterface = loginInterface;
             _configuration = configuration;
             this._jWTHelper = jWTHelper;
+            _emailVerificationStore = emailVerificationStore;
         }
 
         [HttpGet]
@@ -82,6 +85,56 @@ namespace PrideLink.Server.Controllers
                 else
                 {
                     return Ok();
+                }
+            }
+            catch
+            {
+                // If anything went wrong, token is invalid or expired
+                return Unauthorized(new { isLoggedIn = false });
+            }
+        }
+
+        [HttpGet]
+        [Route("CheckVerificationCode")]
+        public IActionResult CheckVerificationCode(string userName, int verificationCode)
+        {
+            try
+            {
+                string userID;
+                using (var context = new MasContext())
+                {
+                    userID = context.TblUsers.FirstOrDefault(e => e.Login == userName).UserId;
+                }
+
+                if(_emailVerificationStore.EmailVerification.Any(e => e.userID == userID))
+                {
+                    List<UserRoles> userRoles = _loginInterface.GetRoles(userID);
+                    List<string> roles = new List<string>();
+                    foreach (var role in userRoles)
+                    {
+                        roles.Add(role.roleName);
+                    }
+                    DateTime expireDate = DateTime.Now;
+                    expireDate = expireDate.AddMinutes(int.Parse(_configuration["Jwt:ExpiresInMinutes"]));
+
+
+                    var token = _jWTHelper.GenerateJwtToken(userID, roles);
+
+                    var cookieOptions = new CookieOptions
+                    {
+                        HttpOnly = true,          // cannot be accessed via JS
+                        Secure = true,            // only sent via HTTPS
+                        SameSite = SameSiteMode.Strict,
+                        Expires = DateTime.UtcNow.AddHours(1)
+                    };
+
+                    Response.Cookies.Append("AuthToken", token, cookieOptions);
+
+                    return Ok();
+                }
+                else
+                {
+                    return Unauthorized();
                 }
             }
             catch

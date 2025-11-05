@@ -30,6 +30,22 @@
         background-color: #f8f9fa; /* Light background color */
     }
 </style>
+@if (userRejectedLocationCheck)
+{
+    <div class="container d-flex justify-content-center align-items-center">
+        <div class="card border-primary mb-3 " style="max-width: 20rem;">
+            <div class="card-header">Location Unavailable</div>
+            <div class="card-body">
+                <h4 class="card-title">Unable to get User Location:</h4>
+                <p class="card-text">As part of this platform a key feature is showing people in your area. As we was unable to verify you location please navigate to Account Settings</p>
+                <h4 class="card-title">What can you do to get verified:</h4>
+                <p class="card-text">If a freind referred you they can verify who you are. If your new and dont know anyone you can contact me on discord</p>
+                <a href="https://discordapp.com/users/maddibailey" target="_blank"
+                   class="form-control text-primary">maddibailey</a>
+            </div>
+        </div>
+    </div>
+}
 @if (showPopup)
 {
     <div class="modal-backdrop fade show"></div>
@@ -215,13 +231,15 @@ else
     private bool userIsVerified = false;
     private bool userAllowedToVerify = false;
 
+    private bool userRejectedLocationCheck = false;
+
     private int selectedUserNo;
     private string selectedUserName;
     private bool showPopup;
 
-    private string cardHeader;
-    private string cardTitle;
-    private string cardSubtitle;
+    // private string cardHeader;
+    // private string cardTitle;
+    // private string cardSubtitle;
     private List<string> base64Images;
     private string cardContent;
     private List<string> listGroupItems;
@@ -353,6 +371,12 @@ else
         }
         catch (Exception ex)
         {
+            var response = await _Http.GetAsync("api/UserLocation/GetLocationFromCityAndTown");
+            if (response.IsSuccessStatusCode)
+            {
+                userLocationData = await response.Content.ReadFromJsonAsync<UserLocationData>();
+            }
+            StateHasChanged();
             Console.WriteLine($"Error retrieving location: {ex.Message}");
         }
     }

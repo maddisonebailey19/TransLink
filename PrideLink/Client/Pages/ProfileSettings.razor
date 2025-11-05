@@ -150,7 +150,7 @@ else
                 <div class="accordion-body">
                     <div>
                         <label for="exampleTextarea" class="form-label mt-4">Write a bit about your self</label>
-                        <textarea class="form-control" id="exampleTextarea" rows="3" value="@bio" @oninput="BioChanged" style=""></textarea>
+                        <textarea class="form-control" id="exampleTextarea" rows="3" value="@bio" @oninput="BioChanged" style="" MaxLength="250"></textarea>
                         <label class="form-label mt-4">Max characters: @currentBioCharacters / 250 </label>
                         <div>
                             <label for="userName" class="form-label mt-4">Display Name</label>

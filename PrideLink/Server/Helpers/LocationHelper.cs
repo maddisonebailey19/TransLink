@@ -11,6 +11,39 @@ namespace PrideLink.Server.Helpers
 {
     public class LocationHelper : ILocationInterface
     {
+        public bool AddTownAndCityToUser(int userNo, int cityNo)
+        {
+            try
+            {
+                using (var context = new MasContext())
+                {
+                    TblGeneralConfiguration tblGeneralConfiguration = context.TblGeneralConfigurations.FirstOrDefault(e => e.UserNo == userNo && e.TypeNo == 6);
+                    if (tblGeneralConfiguration == null)
+                    {
+                        TblGeneralConfiguration tblGeneralConfigurationType6 = new TblGeneralConfiguration()
+                        {
+                            UserNo = userNo,
+                            TypeNo = 6,
+                            Int1 = cityNo
+                        };
+                        context.Add(tblGeneralConfigurationType6);
+                        
+                    }
+                    else
+                    {
+                        tblGeneralConfiguration.Int1 = cityNo;
+                    }
+                    context.SaveChanges();
+                }
+                return true;
+            }
+            catch (Exception e)
+            {
+                return false;
+            }
+            
+        }
+
         public bool AddUpdateUserLocation(UserLocationData location, int userNo)
         {
             using(var context = new MasContext())
@@ -23,6 +56,22 @@ namespace PrideLink.Server.Helpers
 
                 return true;
             }
+        }
+
+        public List<TownCityLocations> GetTownCityLocations()
+        {
+            List<TownCityLocations> townCityLocations = new List<TownCityLocations>();
+            using (var context = new MasContext())
+            {
+                townCityLocations = context.TblCities
+                    .Select(city => new TownCityLocations
+                    {
+                        cityNo = city.CityNo,
+                        cityName = city.CityName
+                    })
+                    .ToList();
+            }
+            return townCityLocations;
         }
 
         public List<VWUserHobbies> GetUserHobbies(UserLocationData userLocation, List<string> roles)
@@ -44,6 +93,22 @@ namespace PrideLink.Server.Helpers
 
                 return users;
             }
+        }
+
+        public UserLocationData GetUserLocationFromTownAndCity(int userNo)
+        {
+            UserLocationData userLocation = new UserLocationData();
+            using (var context = new MasContext())
+            {
+                var UserSettings1 = context.TblGeneralConfigurations.FirstOrDefault(e => e.UserNo == userNo && e.TypeNo == 6);
+                if(UserSettings1.Int1 != null)
+                {
+                    TblCity location = context.TblCities.FirstOrDefault(e => e.CityNo == UserSettings1.Int1);
+                    userLocation.Longitude = (float)location.Longitude;
+                    userLocation.Latitude = (float)location.Latitude;
+                }
+            }
+            return userLocation;
         }
 
         public List<VWUserFriendFinderProfile> GetUsersFromLocation(UserLocationData userLocation, List<string> roles)
