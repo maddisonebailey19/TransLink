@@ -24,7 +24,8 @@ namespace PrideLink.Server.Helpers
                         {
                             UserNo = userNo,
                             TypeNo = 6,
-                            Int1 = cityNo
+                            Int1 = cityNo,
+                            Int2 = 0
                         };
                         context.Add(tblGeneralConfigurationType6);
                         

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using PrideLink.Server.Helpers;
 using PrideLink.Server.Interfaces;
+using PrideLink.Shared.AccountSettings;
 using PrideLink.Shared.LoginDetails;
 
 namespace PrideLink.Server.Controllers
@@ -114,6 +115,89 @@ namespace PrideLink.Server.Controllers
             else
             {
                 return BadRequest();
+            }
+
+        }
+
+        [HttpGet]
+        [Authorize(Roles = "Admin,General")]
+        [Route("GetNotificationSettings")]
+        public IActionResult GetNotificationSettings()
+        {
+            try
+            {
+                var jwtToken = Request.Cookies["AuthToken"];
+
+                int userNo = int.Parse(_jWTHelper.GetUserNo(jwtToken));
+
+                List<NotificationSettings> notificationSettings = _accountSettingsInterface.GetNotificationSettings(userNo);
+
+                return Ok(notificationSettings);
+            }
+            catch(Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpGet]
+        [Authorize(Roles = "Admin,General")]
+        [Route("GetTwoStepAuthenticationSettings")]
+        public IActionResult GetTwoStepAuthenticationSettings()
+        {
+            try
+            {
+                var jwtToken = Request.Cookies["AuthToken"];
+
+                int userNo = int.Parse(_jWTHelper.GetUserNo(jwtToken));
+
+                return Ok(_accountSettingsInterface.GetTwoStepAuthenticationSettings(userNo));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpPatch]
+        [Authorize(Roles = "Admin,General")]
+        [Route("Update-TwoStepAuthenticationSettings")]
+        public IActionResult UpdateTwoStepAuthenticationSettings(bool isEnabled)
+        {
+            try
+            {
+                var jwtToken = Request.Cookies["AuthToken"];
+
+                int userNo = int.Parse(_jWTHelper.GetUserNo(jwtToken));
+
+                _accountSettingsInterface.UpdateTwoStepAuthenticationSettings(userNo, isEnabled);
+
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpPatch]
+        [Authorize(Roles = "Admin,General")]
+        [Route("Update-NotificationSettings")]
+        public IActionResult UpdateNotificationSettings(List<NotificationSettings> notificationSettings)
+        {
+            try
+            {
+                var jwtToken = Request.Cookies["AuthToken"];
+
+                int userNo = int.Parse(_jWTHelper.GetUserNo(jwtToken));
+
+                _accountSettingsInterface.UpdateNotificationSettings(userNo, notificationSettings);
+
+                return Ok(notificationSettings);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
             }
 
         }

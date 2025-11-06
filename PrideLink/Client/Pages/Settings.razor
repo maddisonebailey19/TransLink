@@ -1,5 +1,7 @@
 ﻿@inject HttpClient _Http
+@inject NavigationManager _Navigation
 @page "/AccountSettings"
+@using PrideLink.Shared.AccountSettings
 <h3>Account Settings</h3>
 
 @if (isLoading)
@@ -17,23 +19,26 @@ else
             </h2>
             <div id="collapseAccountInformation" class="accordion-collapse collapse show" aria-labelledby="AccountInformation" data-bs-parent="#accordionExample">
                 <div class="accordion-body">
-                    @if (errorSavingEmail)
-                    {
+                    <div class="card p-3 shadow-sm border-0 bg-light">
+                        <h5 class="mb-3">Change Email</h5>
+                        @if (errorSavingEmail)
+                        {
+                            <div class="mb-3">
+                                <p class="form-label fw-semibold text-danger">@errorMessage</p>
+                            </div>
+                        }
                         <div class="mb-3">
-                            <p class="form-label fw-semibold text-danger">@errorMessage</p>
+                            <label for="currentEmail" class="form-label fw-semibold">Current Email</label>
+                            <input type="email" id="currentEmail" class="@emailInputClass[0]" placeholder="Enter current email" @bind="currentEmail" />
                         </div>
-                    }
-                    <div class="mb-3">
-                        <label for="currentEmail" class="form-label fw-semibold">Current Email</label>
-                        <input type="email" id="currentEmail" class="@emailInputClass[0]" placeholder="Enter current email" @bind="currentEmail" />
-                    </div>
-                    <div class="mb-3">
-                        <label for="newEmail" class="form-label fw-semibold">New Email</label>
-                        <input type="email" id="newEmail" class="@emailInputClass[1]" placeholder="Enter new email" @bind="newEmail" />
-                    </div>
-                    <div class="d-flex justify-content-end">
-                        <button type="button" class="btn btn-outline-secondary me-2" @onclick="CloseEmail">Cancel</button>
-                        <button type="button" class="btn btn-primary" @onclick="SaveEmail">Save Changes</button>
+                        <div class="mb-3">
+                            <label for="newEmail" class="form-label fw-semibold">New Email</label>
+                            <input type="email" id="newEmail" class="@emailInputClass[1]" placeholder="Enter new email" @bind="newEmail" />
+                        </div>
+                        <div class="d-flex justify-content-end">
+                            <button type="button" class="btn btn-outline-secondary me-2" @onclick="CloseEmail">Cancel</button>
+                            <button type="button" class="btn btn-primary" @onclick="SaveEmail">Save Changes</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -67,10 +72,20 @@ else
                                 <label for="ConfirmPassword" class="form-label fw-semibold">Confirm New Password</label>
                                 <input type="password" id="ConfirmPassword" class="@passwordInputClass[2]" placeholder="Re-enter new password" @bind="confirmPassword" />
                             </div>
-
                             <div class="d-flex justify-content-end">
                                 <button type="button" class="btn btn-outline-secondary me-2" @onclick="ClosePassword">Cancel</button>
                                 <button type="button" class="btn btn-primary" @onclick="SavePassword">Save Changes</button>
+                            </div>
+                        </div>
+                        <div class="card p-3 shadow-sm border-0 bg-light">
+                            <h5 class="mb-3">Two Step Authentication</h5>
+                            <div class="mb-3 form-check form-switch">
+                                <label class="form-check-label" for="TwoStepAuthentication">Enable Two Step Authentication</label>
+                                <input class="form-check-input" type="checkbox" id="TwoStepAuthentication" @bind="twoStepAuthenticationEnabled">
+                            </div>
+                            <div class="d-flex justify-content-end">
+                                <button type="button" class="btn btn-outline-secondary me-2" @onclick="CloseTwoStepAuthenticationEnabled">Cancel</button>
+                                <button type="button" class="btn btn-primary" @onclick="SaveTwoStepAuthenticationEnabled">Save Changes</button>
                             </div>
                         </div>
                     </div>
@@ -84,6 +99,21 @@ else
                 </h2>
                 <div id="collapseNotifications" class="accordion-collapse collapse" aria-labelledby="Notifications" data-bs-parent="#accordionExample">
                     <div class="accordion-body">
+                        <div class="card p-3 shadow-sm border-0 bg-light">
+                            <h5 class="mb-3">Notification Email Settings</h5>
+                            <div class="mb-3 form-check form-switch">
+                                <label class="form-check-label" for="FriendRequestsNotification">Enable Friend Request Notifications</label>
+                                <input class="form-check-input" type="checkbox" id="FriendRequestsNotification" @bind="friendRequestNotificationsEnabled">
+                            </div>
+                            <div class="mb-3 form-check form-switch">
+                                <label class="form-check-label" for="NewsFeedNotification">Enable News Feed Notifications</label>
+                                <input class="form-check-input" type="checkbox" id="NewsFeedNotification" @bind="newsFeedNotificationsEnabled">
+                            </div>
+                            <div class="d-flex justify-content-end ">
+                                <button type="button" class="btn btn-secondary" style="margin-right: 10px; margin-top: 10px" @onclick="CloseNotificationSettings">Close</button>
+                                <button type="button" class="btn btn-primary" style="margin-top: 10px" @onclick="SaveNotificationSettings">Save</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -95,13 +125,20 @@ else
                 </h2>
                 <div id="collapseAccountManagement" class="accordion-collapse collapse" aria-labelledby="AccountManagement" data-bs-parent="#accordionExample">
                     <div class="accordion-body">
+                        <div class="card p-3 shadow-sm border-0 bg-light">
+                            <div class="mb-3">
+                                <button type="button" class="btn btn-outline-secondary me-2" @onclick="ClosePassword">Cancel</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+    
 }
 @code {
+    #region Variable Declarations
     private bool isLoading = false;
     private double loadingPercentage = 0;
     private string currentStep;
@@ -114,6 +151,7 @@ else
     private string newPassword;
     private string confirmPassword;
     private bool errorSavingPassword = false;
+    private bool twoStepAuthenticationEnabled;
     List<string> passwordInputClass = new List<string>()
     {
         "form-control", //Current password
@@ -131,6 +169,125 @@ else
         "form-control", //Current password
         "form-control", //New Password
     };
+
+    //---   Notifications   ---//
+
+    List<NotificationSettings> notificationSettings = new List<NotificationSettings>();
+
+    private bool friendRequestNotificationsEnabled;
+    private bool newsFeedNotificationsEnabled;
+
+    #endregion
+
+    #region On Initialize
+    protected override async Task OnInitializedAsync()
+    {
+        var steps = new List<(string Name, Func<Task> Action)>
+        {
+            ("Getting Notification Settings", async () => { await GetNotificationSettings(); }),
+            ("Getting Two Step Authentication Settings", async () => { await GetTwoStepAuthenticationSettings(); })
+        };
+
+        await RunAsyncSteps(steps);
+
+        StateHasChanged();
+    }
+
+    private async Task RunAsyncSteps(List<(string Name, Func<Task> Action)> steps)
+    {
+        CalculateLoadingIncrement(steps.Count);
+
+        for (int i = 0; i < steps.Count; i++)
+        {
+            var (stepName, action) = steps[i];
+
+            try
+            {
+                await action();
+            }
+            catch (Exception ex)
+            {
+                // Continue on errors but log for debugging
+                Console.WriteLine($"OnInitialized step '{stepName}' failed: {ex.Message}");
+            }
+
+            // Increment progress after each step; stop loading on the last step
+            if (i == steps.Count - 1)
+                LoadingProgress(stepName, false);
+            else
+                LoadingProgress(stepName);
+        }
+    }
+
+    private void CalculateLoadingIncrement(int totalSteps)
+    {
+        loadingPercentage = 0;
+        currentStep = "";
+        loadingPercentageIncrement = 100 / totalSteps;
+        isLoading = true;
+    }
+
+    private void LoadingProgress(string stepName, bool loading = true)
+    {
+        if (loading == false)
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+        else
+        {
+            loadingPercentage += loadingPercentageIncrement;
+            currentStep = stepName;
+            StateHasChanged();
+        }
+
+    }
+    #endregion
+
+    #region Change Email Methods
+    private async void SaveEmail()
+    {
+        var emailCheckResponse = await _Http.GetAsync("api/AccountSettings/IsEmailCorrect/?email=" + currentEmail);
+        if (emailCheckResponse.IsSuccessStatusCode)
+        {
+            if (newEmail.Contains("@") && newEmail.Contains("."))
+            {
+                var emailUpdatedResponse = await _Http.PatchAsync("api/AccountSettings/Update-Email/?email=" + newEmail, null);
+                currentEmail = "";
+                newEmail = "";
+                errorSavingEmail = false;
+                StateHasChanged();
+
+            }
+            else
+            {
+                errorSavingEmail = true;
+                emailInputClass[1] = "form-control is-invalid";
+                errorMessage = "New email is not valid";
+                StateHasChanged();
+            }
+        }
+        else
+        {
+            errorSavingEmail = true;
+            emailInputClass[0] = "form-control is-invalid";
+            errorMessage = "Current email is incorrect";
+            StateHasChanged();
+        }
+    }
+
+    private async void CloseEmail()
+    {
+        errorSavingEmail = false;
+        emailInputClass[0] = "form-control";
+        emailInputClass[1] = "form-control";
+        currentEmail = "";
+        newEmail = "";
+    }
+
+    #endregion
+
+    #region Security
 
     private async void SavePassword()
     {
@@ -180,43 +337,77 @@ else
         StateHasChanged();
     }
 
-    private async void SaveEmail()
+    private async Task GetTwoStepAuthenticationSettings()
     {
-        var emailCheckResponse = await _Http.GetAsync("api/AccountSettings/IsEmailCorrect/?email=" + currentEmail);
-        if (emailCheckResponse.IsSuccessStatusCode)
+        var twoStepAuthenticationSettingsResponse = await _Http.GetAsync("api/AccountSettings/GetTwoStepAuthenticationSettings");
+        if (twoStepAuthenticationSettingsResponse.IsSuccessStatusCode) 
         {
-            if(newEmail.Contains("@") && newEmail.Contains("."))
-            {
-                var emailUpdatedResponse = await _Http.PatchAsync("api/AccountSettings/Update-Email/?email=" + newEmail, null);
-                currentEmail = "";
-                newEmail = "";
-                errorSavingEmail = false;
-                StateHasChanged();
-
-            }
-            else
-            {
-                errorSavingEmail = true;
-                emailInputClass[1] = "form-control is-invalid";
-                errorMessage = "New email is not valid";
-                StateHasChanged();
-            }
+            twoStepAuthenticationEnabled = bool.Parse(await twoStepAuthenticationSettingsResponse.Content.ReadAsStringAsync());
         }
         else
         {
-            errorSavingEmail = true;
-            emailInputClass[0] = "form-control is-invalid";
-            errorMessage = "Current email is incorrect";
-            StateHasChanged();
+            twoStepAuthenticationEnabled = false;
         }
     }
 
-    private async void CloseEmail()
+    private async void SaveTwoStepAuthenticationEnabled()
     {
-        errorSavingEmail = false;
-        emailInputClass[0] = "form-control";
-        emailInputClass[1] = "form-control";
-        currentEmail = "";
-        newEmail = "";
+        var updateNotificationSettingsResponse = await _Http.PatchAsync("api/AccountSettings/Update-TwoStepAuthenticationSettings/?isEnabled=" + twoStepAuthenticationEnabled, null);
     }
+
+    private async void CloseTwoStepAuthenticationEnabled()
+    {
+        _Navigation.NavigateTo("/AccountSettings");
+    }
+
+    #endregion
+
+    #region Notification Methods
+    public async Task GetNotificationSettings()
+    {
+        var notificationSettingsResponse = await _Http.GetAsync("api/AccountSettings/GetNotificationSettings");
+        if (notificationSettingsResponse.IsSuccessStatusCode)
+        {
+            notificationSettings = await notificationSettingsResponse.Content.ReadFromJsonAsync<List<NotificationSettings>>();
+        }
+        foreach (NotificationSettings notificationSetting in notificationSettings)
+        {
+            switch (notificationSetting.NotificationSettingsNo)
+            {
+                case 1:
+                    friendRequestNotificationsEnabled = notificationSetting.Value;
+                    break;
+                case 2:
+                    newsFeedNotificationsEnabled = notificationSetting.Value;
+                    break;
+            }
+        }
+    }
+
+    private async void SaveNotificationSettings()
+    {
+        foreach (NotificationSettings notificationSetting in notificationSettings)
+        {
+            switch (notificationSetting.NotificationSettingsNo)
+            {
+                case 1:
+                    notificationSetting.Value = friendRequestNotificationsEnabled;
+                    break;
+                case 2:
+                    notificationSetting.Value = newsFeedNotificationsEnabled;
+                    break;
+            }
+        }
+        var updateNotificationSettingsResponse = await _Http.PatchAsJsonAsync<List<NotificationSettings>>("api/AccountSettings/Update-NotificationSettings", notificationSettings);
+    }
+
+    private async void CloseNotificationSettings()
+    {
+        _Navigation.NavigateTo("/AccountSettings");
+    }
+    #endregion
+
+    #region Account Management Methods
+    #endregion
+
 }
