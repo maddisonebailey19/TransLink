@@ -40,7 +40,7 @@ namespace PrideLink.Server.Controllers
             
             List<string> roles = _jWTHelper.GetRoles(jwtToken);
 
-            List<UserFreindFinderAccount?> response = _freindFinderUserInfoInterface.GetAllUserFreindFinderAccounts(userLocation, roles);
+            List<UserFreindFinderAccount?> response = _freindFinderUserInfoInterface.GetAllUserFreindFinderAccounts(userNo, userLocation, roles);
             response.Remove(response.FirstOrDefault(e => e.userNo == userNo));
             if (response != null)
             {
@@ -51,5 +51,7 @@ namespace PrideLink.Server.Controllers
                 return BadRequest();
             }
         }
+
+
     }
 }

@@ -19,6 +19,10 @@ public partial class MasContext : DbContext
 
     public virtual DbSet<TblEmailContent> TblEmailContents { get; set; }
 
+    public virtual DbSet<TblFriendMappingTable> TblFriendMappingTables { get; set; }
+
+    public virtual DbSet<TblFriendStatus> TblFriendStatuses { get; set; }
+
     public virtual DbSet<TblGeneralConfiguration> TblGeneralConfigurations { get; set; }
 
     public virtual DbSet<TblGeneralConfigurationType> TblGeneralConfigurationTypes { get; set; }
@@ -40,6 +44,7 @@ public partial class MasContext : DbContext
     public virtual DbSet<TblUserRoleMappingTable> TblUserRoleMappingTables { get; set; }
 
     public virtual DbSet<TblUserRoleType> TblUserRoleTypes { get; set; }
+
     public virtual DbSet<VWUserFriendFinderProfile> VWUserFriendFinderProfile { get; set; }
     public virtual DbSet<VWUserHobbies> VWUserHobbies { get; set; }
 
@@ -107,6 +112,86 @@ public partial class MasContext : DbContext
                 .HasDefaultValueSql("((1))");
             entity.Property(e => e.EmailContent).UseCollation("Latin1_General_100_CI_AS_SC_UTF8");
             entity.Property(e => e.EmailContentName)
+                .HasMaxLength(50)
+                .IsUnicode(false);
+            entity.Property(e => e.TSystemCreateDate)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime")
+                .HasColumnName("t_SystemCreateDate");
+            entity.Property(e => e.TSystemCreateProcedureId)
+                .HasDefaultValueSql("(@@procid)")
+                .HasColumnName("t_SystemCreateProcedureId");
+            entity.Property(e => e.TSystemLastModifiedUserName)
+                .HasMaxLength(500)
+                .IsUnicode(false)
+                .HasDefaultValueSql("(suser_sname())")
+                .HasColumnName("t_SystemLastModifiedUserName");
+            entity.Property(e => e.TSystemModifiedCount)
+                .HasDefaultValueSql("((0))")
+                .HasColumnName("t_SystemModifiedCount");
+            entity.Property(e => e.TSystemModifiedDate)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime")
+                .HasColumnName("t_SystemModifiedDate");
+        });
+
+        modelBuilder.Entity<TblFriendMappingTable>(entity =>
+        {
+            entity.HasKey(e => e.FriendMappingTableNo);
+
+            entity.ToTable("tblFriendMappingTable", tb => tb.HasTrigger("tblFriendMappingTable_SystemTrigger"));
+
+            entity.Property(e => e.Active)
+                .IsRequired()
+                .HasDefaultValueSql("((1))");
+            entity.Property(e => e.TSystemCreateDate)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime")
+                .HasColumnName("t_SystemCreateDate");
+            entity.Property(e => e.TSystemCreateProcedureId)
+                .HasDefaultValueSql("(@@procid)")
+                .HasColumnName("t_SystemCreateProcedureId");
+            entity.Property(e => e.TSystemLastModifiedUserName)
+                .HasMaxLength(500)
+                .IsUnicode(false)
+                .HasDefaultValueSql("(suser_sname())")
+                .HasColumnName("t_SystemLastModifiedUserName");
+            entity.Property(e => e.TSystemModifiedCount)
+                .HasDefaultValueSql("((0))")
+                .HasColumnName("t_SystemModifiedCount");
+            entity.Property(e => e.TSystemModifiedDate)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime")
+                .HasColumnName("t_SystemModifiedDate");
+
+            entity.HasOne(d => d.FriendStatusNoNavigation).WithMany(p => p.TblFriendMappingTables)
+                .HasForeignKey(d => d.FriendStatusNo)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__tblFriend__Frien__3FDB6521");
+
+            entity.HasOne(d => d.FriendUserNoNavigation).WithMany(p => p.TblFriendMappingTableFriendUserNoNavigations)
+                .HasForeignKey(d => d.FriendUserNo)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__tblFriend__Frien__3EE740E8");
+
+            entity.HasOne(d => d.UserNoNavigation).WithMany(p => p.TblFriendMappingTableUserNoNavigations)
+                .HasForeignKey(d => d.UserNo)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__tblFriend__UserN__3DF31CAF");
+        });
+
+        modelBuilder.Entity<TblFriendStatus>(entity =>
+        {
+            entity.HasKey(e => e.FriendStatusNo);
+
+            entity.ToTable("tblFriendStatus", tb => tb.HasTrigger("tblFriendStatus_SystemTrigger"));
+
+            entity.HasIndex(e => e.FriendStatusName, "IX_tblFriendStatusName").IsUnique();
+
+            entity.Property(e => e.Active)
+                .IsRequired()
+                .HasDefaultValueSql("((1))");
+            entity.Property(e => e.FriendStatusName)
                 .HasMaxLength(50)
                 .IsUnicode(false);
             entity.Property(e => e.TSystemCreateDate)

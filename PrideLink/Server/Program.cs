@@ -98,6 +98,7 @@ builder.Services.AddScoped<ILocationInterface, LocationHelper>();
 builder.Services.AddScoped<IFreindFinderUserInfoInterface, FreindFinderUserAccountHelper>();
 builder.Services.AddScoped<IGmailInterface, GmailHelper>();
 builder.Services.AddScoped<IAccountSettingsInterface, AccountSettingsHelper>();
+builder.Services.AddScoped<IFriendInterface, FriendHelper>();
 builder.Services.AddScoped<PasswordHelper>();
 builder.Services.AddSingleton<EmailVerificationStore>();
 builder.Services.AddScoped<Random>();

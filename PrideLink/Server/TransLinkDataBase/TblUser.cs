@@ -39,6 +39,10 @@ public partial class TblUser
 
     public long? TSystemCreateProcedureId { get; set; }
 
+    public virtual ICollection<TblFriendMappingTable> TblFriendMappingTableFriendUserNoNavigations { get; set; } = new List<TblFriendMappingTable>();
+
+    public virtual ICollection<TblFriendMappingTable> TblFriendMappingTableUserNoNavigations { get; set; } = new List<TblFriendMappingTable>();
+
     public virtual ICollection<TblGeneralConfiguration> TblGeneralConfigurations { get; set; } = new List<TblGeneralConfiguration>();
 
     public virtual ICollection<TblHobbyUserMappingTable> TblHobbyUserMappingTables { get; set; } = new List<TblHobbyUserMappingTable>();

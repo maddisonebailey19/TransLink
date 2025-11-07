@@ -12,6 +12,8 @@ namespace PrideLink.Shared.FreindFinderDetails
         public string DisplayName { get; set; }
         public string Age { get; set; }
         public string UserVerified { get; set; }
-        
+        public string? FriendStatus { get; set; }
+
+
     }
 }

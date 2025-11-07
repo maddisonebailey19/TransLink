@@ -1,6 +1,7 @@
 ﻿using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using PrideLink.Server.Controllers;
 using PrideLink.Server.Interfaces;
 using PrideLink.Server.TransLinkDataBase;
 using PrideLink.Shared.General;
@@ -44,7 +45,6 @@ namespace PrideLink.Server.Helpers
             }
             
         }
-
         public bool AddUpdateUserLocation(UserLocationData location, int userNo)
         {
             using(var context = new MasContext())
@@ -58,7 +58,6 @@ namespace PrideLink.Server.Helpers
                 return true;
             }
         }
-
         public List<TownCityLocations> GetTownCityLocations()
         {
             List<TownCityLocations> townCityLocations = new List<TownCityLocations>();
@@ -74,7 +73,28 @@ namespace PrideLink.Server.Helpers
             }
             return townCityLocations;
         }
-
+        public List<VWUserHobbies> GetUserFriendsHobbies(int userNo)
+        {
+            var userNoParam = new SqlParameter("@UserNo", userNo);
+            using (var context = new MasContext())
+            {
+                List<VWUserHobbies> users = context.VWUserHobbies
+                .FromSqlRaw("EXEC spGetAllUserFriendHobbies @UserNo", userNoParam)
+                .ToList();
+                return users;
+            }
+        }
+        public List<VWUserFriendFinderProfile> GetUserFriendsProfiles(int userNo)
+        {
+            var userNoParam = new SqlParameter("@UserNo", userNo);
+            using (var context = new MasContext())
+            {
+                List<VWUserFriendFinderProfile> users = context.VWUserFriendFinderProfile
+                .FromSqlRaw("EXEC spGetAllUserFriendProfiles @UserNo", userNoParam)
+                .ToList();
+                return users;
+            }
+        }
         public List<VWUserHobbies> GetUserHobbies(UserLocationData userLocation, List<string> roles)
         {
             int radisuInMeters = 500000000;
@@ -95,7 +115,6 @@ namespace PrideLink.Server.Helpers
                 return users;
             }
         }
-
         public UserLocationData GetUserLocationFromTownAndCity(int userNo)
         {
             UserLocationData userLocation = new UserLocationData();
@@ -111,14 +130,14 @@ namespace PrideLink.Server.Helpers
             }
             return userLocation;
         }
-
-        public List<VWUserFriendFinderProfile> GetUsersFromLocation(UserLocationData userLocation, List<string> roles)
+        public List<VWUserFriendFinderProfile> GetUsersFromLocation(int userNo, UserLocationData userLocation, List<string> roles)
         {
             int radisuInMeters = 500000000;
 
             bool adminFlag = roles != null && roles.Contains("Admin", StringComparer.OrdinalIgnoreCase);
 
-            List<int> userNos = new List<int>();    
+            List<int> userNos = new List<int>();
+            var userNoParam = new SqlParameter("@UserNo", userNo);
             var latitudeParam = new SqlParameter("@Latitude", userLocation.Latitude);
             var longitudeParam = new SqlParameter("@Longitude", userLocation.Longitude);
             var radiusParam = new SqlParameter("@RadiusInMeters", radisuInMeters);
@@ -126,7 +145,7 @@ namespace PrideLink.Server.Helpers
             using (var context = new MasContext())
             {
                 List<VWUserFriendFinderProfile> users = context.VWUserFriendFinderProfile
-                .FromSqlRaw("EXEC spGetAllUserProfilesWithinRange @Latitude, @Longitude, @RadiusInMeters, @AdminFlag", latitudeParam, longitudeParam, radiusParam, adminFlagParam)
+                .FromSqlRaw("EXEC spGetAllUserProfilesWithinRange @UserNo, @Latitude, @Longitude, @RadiusInMeters, @AdminFlag", userNoParam, latitudeParam, longitudeParam, radiusParam, adminFlagParam)
                 .ToList();
 
                 return users;

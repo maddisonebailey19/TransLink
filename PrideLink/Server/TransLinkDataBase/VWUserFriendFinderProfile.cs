@@ -10,6 +10,8 @@
         public string? Age { get; set; }
         public long? RelationshipStatusNo { get; set; }
         public string? RelationshipStatusName { get; set; }
+        public int IsUserVerified { get; set; }
+        public string? FriendStatus { get; set; }
 
         // Pictures
         public string? Picture1 { get; set; }

@@ -99,21 +99,40 @@ else
                     <div class="card-header bg-light d-flex justify-content-between align-items-center rounded-top-4">
                         <h3 class="mb-0">@finderAccount.UserAccountGeneralInfo.DisplayName</h3>
 
-                        @if (userAllowedToVerify && finderAccount.UserAccountGeneralInfo.UserVerified == "Unverified")
-                        {
-                            <span class="badge bg-secondary text-dark"
-                                  style="cursor: pointer;"
-                                  @onclick="() => ShowVerifyPopup(finderAccount.userNo)">
-                                @finderAccount.UserAccountGeneralInfo.UserVerified
-                            </span>
-                        }
-                        else
-                        {
-                            <span class="badge bg-info text-light">
-                                @finderAccount.UserAccountGeneralInfo.UserVerified
-                            </span>
-                        }
+                        <div class="d-flex align-items-center" style="gap: 10px;">
+                            <!-- Verification Badge -->
+                            @if (userAllowedToVerify && finderAccount.UserAccountGeneralInfo.UserVerified == "Unverified")
+                            {
+                                <span class="badge bg-secondary text-dark"
+                                      style="cursor: pointer;"
+                                      @onclick="() => ShowVerifyPopup(finderAccount.userNo)">
+                                    @finderAccount.UserAccountGeneralInfo.UserVerified
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-info text-light">
+                                    @finderAccount.UserAccountGeneralInfo.UserVerified
+                                </span>
+                            }
+
+                            @if (finderAccount.UserAccountGeneralInfo.FriendStatus == "Accepted")
+                            {
+                                <button class="btn btn-outline-primary btn-sm"
+                                        @onclick="() => UnFriend(finderAccount.userNo)">
+                                    <i class="bi bi-person-plus"></i> Unfriend
+                                </button>
+                            }
+                            else
+                            {
+                                <button class="btn btn-outline-primary btn-sm"
+                                        @onclick="() => AddFriend(finderAccount.userNo)">
+                                    <i class="bi bi-person-plus"></i> Add Friend
+                                </button>
+                            }
+                        </div>
                     </div>
+                    
 
                     <!-- Profile Images -->
                     <div class="scrollable-images-container d-flex flex-row overflow-auto p-2" style="gap: 10px;">
@@ -128,15 +147,70 @@ else
                             }
                         }
                     </div>
+                    <div class="card-body">
+                        <h5 class="card-title  mb-4">Age: @finderAccount.UserAccountGeneralInfo.Age</h5>
 
                     <!-- About Me -->
-                    <div class="card-body">
+
                         <h4 class="fw-semibold">About me</h4>
                         <div class="p-3 border rounded-3 bg-light">
                             <p class="mb-0">@finderAccount.UserAccountGeneralInfo.BioDescription</p>
                         </div>
                     </div>
+                    <!-- Test -->
+                    @* <ul class="nav nav-tabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link" data-bs-toggle="tab" href="#Hobbies" aria-selected="false" role="tab" tabindex="-1">Hobbies</a>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link active" data-bs-toggle="tab" href="#Socials" aria-selected="true" role="tab">Socials</a>
+                        </li>
+                    </ul>
+                    <div id="myTabContent" class="tab-content">
+                        <div class="tab-pane fade" id="Hobbies" role="tabpanel">
+                            <div class="card-body">
+                                <h4 class="card-title">Light card title</h4>
+                                @foreach (var hobby in finderAccount.UserAccountHobbies)
+                                {
+                                    <button class="btn btn-primary rounded-pill me-2 mt-2" disabled>
+                                        @hobby.HobbyName
+                                    </button>
+                                }
+                            </div>
+                        </div>
+                        <div class="tab-pane fade active show" id="Socials" role="tabpanel">
+                            <div class="card-body">
+                                <h4 class="card-title">Light card title</h4>
+                                @{
+                                    var socials = new Dictionary<string, (string Url, string? Value)>
+                                    {
+                                        ["Instagram"] = ("https://instagram.com/", finderAccount.UserAccountSocials.FirstOrDefault(e => e.socialTypeNo == 1)?.socialValue),
+                                        ["Snapchat"] = ("https://snapchat.com/add/", finderAccount.UserAccountSocials.FirstOrDefault(e => e.socialTypeNo == 2)?.socialValue),
+                                        ["WhatsApp"] = ("https://wa.me/", finderAccount.UserAccountSocials.FirstOrDefault(e => e.socialTypeNo == 3)?.socialValue),
+                                        ["Discord"] = ("https://discordapp.com/users/", finderAccount.UserAccountSocials.FirstOrDefault(e => e.socialTypeNo == 4)?.socialValue)
+                                    };
+                                }
 
+                                @foreach (var social in socials)
+                                {
+                                    <label class="form-label mt-3">@social.Key</label>
+
+                                    @if (!string.IsNullOrWhiteSpace(social.Value.Value))
+                                    {
+                                        <a href="@($"{social.Value.Url}{social.Value.Value}")"
+                                           target="_blank"
+                                           class="form-control text-primary">
+                                            @social.Value.Value
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <p class="form-text text-muted">No @social.Key linked</p>
+                                    }
+                                }
+                            </div>
+                        </div>
+                    </div> *@
                     <!-- Accordion -->
                     <div class="accordion" id="accordion_@finderAccount.userNo">
                         <!-- Hobbies -->
@@ -252,6 +326,18 @@ else
     private UserLocationData userLocationData = new UserLocationData();
     private List<UserFreindFinderAccount> userFreindFinderAccounts = new List<UserFreindFinderAccount>();
 
+    private async Task AddFriend(int userNo)
+    {
+        Console.WriteLine("Adding friend with userNo: " + userNo);
+        var response = await _Http.PostAsync("/api/Friend/AddFriend?friendUserNo=" + userNo,null);
+    }
+
+    private async Task UnFriend(int userNo)
+    {
+        Console.WriteLine("Unfriend: " + userNo);
+        // var response = await _Http.PatchAsync("/api/Friend/AcceptFriendRequest?friendUserNo=" + userNo, null);
+    }
+
     private async Task ShowVerifyPopup(int userNo)
     {
         selectedUserNo = userNo;
@@ -267,7 +353,7 @@ else
     private async Task Allow()
     {
         showPopup = false;
-        var response = await _Http.PatchAsync("/api/General/UpdateVerificationStatus?userNo=" + selectedUserNo + "&userTypeName=Verified", null);
+        var response = await _Http.PatchAsync("/api/General/UpdateVerificationStatus/?userNo=" + selectedUserNo + "&userTypeName=Verified", null);
         if (response.IsSuccessStatusCode)
         {
 

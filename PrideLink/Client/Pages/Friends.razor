@@ -1,0 +1,223 @@
+﻿@page "/Friends"
+@using PrideLink.Shared.FreindFinderDetails
+@inject HttpClient _Http
+<h3>Friends</h3>
+@foreach (var finderAccount in userFreindFinderAccounts)
+{
+    <div class="card mb-4 shadow-sm border-0 rounded-4">
+        <!-- Header -->
+        <div class="card-header bg-light d-flex justify-content-between align-items-center rounded-top-4">
+            <h3 class="mb-0">@finderAccount.UserAccountGeneralInfo.DisplayName</h3>
+
+            <div class="d-flex align-items-center" style="gap: 10px;">
+                <span class="badge bg-info text-light">
+                    @finderAccount.UserAccountGeneralInfo.UserVerified
+                </span>
+
+                <!-- Add Friend Button -->
+                @if(finderAccount.UserAccountGeneralInfo.FriendStatus == "Accepted")
+                {
+                    <button class="btn btn-outline-primary btn-sm"
+                            @onclick="() => UnFriend(finderAccount.userNo)">
+                        <i class="bi bi-person-plus"></i> Unfriend
+                    </button>
+                }
+                else
+                {
+                    <button class="btn btn-outline-primary btn-sm"
+                            @onclick="() => ConfirmFriend(finderAccount.userNo)">
+                        <i class="bi bi-person-plus"></i> Confirm
+                    </button>
+                }
+            </div>
+        </div>
+
+
+        <!-- Profile Images -->
+        <div class="scrollable-images-container d-flex flex-row overflow-auto p-2" style="gap: 10px;">
+            @foreach (var base64Image in finderAccount.UserAccountPictures)
+            {
+                if (!string.IsNullOrEmpty(base64Image.base64Image))
+                {
+                    <img src="@base64Image.base64Image"
+                         class="rounded-3"
+                         style="object-fit: cover; width: 180px; height: 180px;"
+                         alt="User image" />
+                }
+            }
+        </div>
+        <div class="card-body">
+            <h5 class="card-title  mb-4">Age: @finderAccount.UserAccountGeneralInfo.Age</h5>
+
+            <!-- About Me -->
+
+            <h4 class="fw-semibold">About me</h4>
+            <div class="p-3 border rounded-3 bg-light">
+                <p class="mb-0">@finderAccount.UserAccountGeneralInfo.BioDescription</p>
+            </div>
+        </div>
+        <!-- Test -->
+        @* <ul class="nav nav-tabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link" data-bs-toggle="tab" href="#Hobbies" aria-selected="false" role="tab" tabindex="-1">Hobbies</a>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link active" data-bs-toggle="tab" href="#Socials" aria-selected="true" role="tab">Socials</a>
+                        </li>
+                    </ul>
+                    <div id="myTabContent" class="tab-content">
+                        <div class="tab-pane fade" id="Hobbies" role="tabpanel">
+                            <div class="card-body">
+                                <h4 class="card-title">Light card title</h4>
+                                @foreach (var hobby in finderAccount.UserAccountHobbies)
+                                {
+                                    <button class="btn btn-primary rounded-pill me-2 mt-2" disabled>
+                                        @hobby.HobbyName
+                                    </button>
+                                }
+                            </div>
+                        </div>
+                        <div class="tab-pane fade active show" id="Socials" role="tabpanel">
+                            <div class="card-body">
+                                <h4 class="card-title">Light card title</h4>
+                                @{
+                                    var socials = new Dictionary<string, (string Url, string? Value)>
+                                    {
+                                        ["Instagram"] = ("https://instagram.com/", finderAccount.UserAccountSocials.FirstOrDefault(e => e.socialTypeNo == 1)?.socialValue),
+                                        ["Snapchat"] = ("https://snapchat.com/add/", finderAccount.UserAccountSocials.FirstOrDefault(e => e.socialTypeNo == 2)?.socialValue),
+                                        ["WhatsApp"] = ("https://wa.me/", finderAccount.UserAccountSocials.FirstOrDefault(e => e.socialTypeNo == 3)?.socialValue),
+                                        ["Discord"] = ("https://discordapp.com/users/", finderAccount.UserAccountSocials.FirstOrDefault(e => e.socialTypeNo == 4)?.socialValue)
+                                    };
+                                }
+
+                                @foreach (var social in socials)
+                                {
+                                    <label class="form-label mt-3">@social.Key</label>
+
+                                    @if (!string.IsNullOrWhiteSpace(social.Value.Value))
+                                    {
+                                        <a href="@($"{social.Value.Url}{social.Value.Value}")"
+                                           target="_blank"
+                                           class="form-control text-primary">
+                                            @social.Value.Value
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <p class="form-text text-muted">No @social.Key linked</p>
+                                    }
+                                }
+                            </div>
+                        </div>
+                    </div> *@
+        <!-- Accordion -->
+        <div class="accordion" id="accordion_@finderAccount.userNo">
+            <!-- Hobbies -->
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingHobbies_@finderAccount.userNo">
+                    <button class="accordion-button collapsed"
+                            type="button"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#collapseHobbies_@finderAccount.userNo"
+                            aria-expanded="false"
+                            aria-controls="collapseHobbies_@finderAccount.userNo">
+                        Hobbies
+                    </button>
+                </h2>
+                <div id="collapseHobbies_@finderAccount.userNo"
+                     class="accordion-collapse collapse"
+                     aria-labelledby="headingHobbies_@finderAccount.userNo"
+                     data-bs-parent="#accordion_@finderAccount.userNo">
+                    <div class="accordion-body">
+                        @foreach (var hobby in finderAccount.UserAccountHobbies)
+                        {
+                            <button class="btn btn-primary rounded-pill me-2 mt-2" disabled>
+                                @hobby.HobbyName
+                            </button>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Socials -->
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingSocials_@finderAccount.userNo">
+                    <button class="accordion-button collapsed"
+                            type="button"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#collapseSocials_@finderAccount.userNo"
+                            aria-expanded="false"
+                            aria-controls="collapseSocials_@finderAccount.userNo">
+                        Socials
+                    </button>
+                </h2>
+                <div id="collapseSocials_@finderAccount.userNo"
+                     class="accordion-collapse collapse"
+                     aria-labelledby="headingSocials_@finderAccount.userNo"
+                     data-bs-parent="#accordion_@finderAccount.userNo">
+                    <div class="accordion-body">
+                        @{
+                            var socials = new Dictionary<string, (string Url, string? Value)>
+                            {
+                                ["Instagram"] = ("https://instagram.com/", finderAccount.UserAccountSocials.FirstOrDefault(e => e.socialTypeNo == 1)?.socialValue),
+                                ["Snapchat"] = ("https://snapchat.com/add/", finderAccount.UserAccountSocials.FirstOrDefault(e => e.socialTypeNo == 2)?.socialValue),
+                                ["WhatsApp"] = ("https://wa.me/", finderAccount.UserAccountSocials.FirstOrDefault(e => e.socialTypeNo == 3)?.socialValue),
+                                ["Discord"] = ("https://discordapp.com/users/", finderAccount.UserAccountSocials.FirstOrDefault(e => e.socialTypeNo == 4)?.socialValue)
+                            };
+                        }
+
+                        @foreach (var social in socials)
+                        {
+                            <label class="form-label mt-3">@social.Key</label>
+
+                            @if (!string.IsNullOrWhiteSpace(social.Value.Value))
+                            {
+                                <a href="@($"{social.Value.Url}{social.Value.Value}")"
+                                   target="_blank"
+                                   class="form-control text-primary">
+                                    @social.Value.Value
+                                </a>
+                            }
+                            else
+                            {
+                                <p class="form-text text-muted">No @social.Key linked</p>
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@code {
+    private List<UserFreindFinderAccount> userFreindFinderAccounts = new List<UserFreindFinderAccount>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetAllUserAccountInfo();
+    }
+
+    private async Task ConfirmFriend(int userNo)
+    {
+        Console.WriteLine("Adding friend with userNo: " + userNo);
+        var response = await _Http.PatchAsync("/api/Friend/AcceptFriendRequest?friendUserNo=" + userNo, null);
+    }
+
+    private async Task UnFriend(int userNo)
+    {
+        Console.WriteLine("Unfriend: " + userNo);
+        // var response = await _Http.PatchAsync("/api/Friend/AcceptFriendRequest?friendUserNo=" + userNo, null);
+    }
+
+    private async Task GetAllUserAccountInfo()
+    {
+        var response = await _Http.GetAsync("api/Friend/GetFreindFinderAccountInfo");
+        Console.WriteLine($"GetAllUserAccountInfo response: {response.StatusCode}");
+        if (response.IsSuccessStatusCode)
+        {
+            var content = await response.Content.ReadFromJsonAsync<List<UserFreindFinderAccount>>();
+            userFreindFinderAccounts = content ?? new List<UserFreindFinderAccount>();
+            Console.WriteLine($"Fetched {userFreindFinderAccounts.Count} accounts");
+        }
+    }
+}

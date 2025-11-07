@@ -1,4 +1,5 @@
-﻿using PrideLink.Server.Controllers;
+﻿using PrideLink.Client.Helpers;
+using PrideLink.Server.Controllers;
 using PrideLink.Server.Interfaces;
 using PrideLink.Server.TransLinkDataBase;
 using PrideLink.Shared.FreindFinderDetails;
@@ -21,11 +22,11 @@ namespace PrideLink.Server.Helpers
             _generalInterface = generalInterface;
         }
 
-        public List<UserFreindFinderAccount> GetAllUserFreindFinderAccounts(UserLocationData userLocation, List<string> roles)
+        public List<UserFreindFinderAccount> GetAllUserFreindFinderAccounts(int userNo, UserLocationData userLocation, List<string> roles)
         {
             List<UserFreindFinderAccount> userAccounts = new List<UserFreindFinderAccount>();
 
-            List<VWUserFriendFinderProfile> usersFromLocation = _locationInterface.GetUsersFromLocation(userLocation, roles);
+            List<VWUserFriendFinderProfile> usersFromLocation = _locationInterface.GetUsersFromLocation(userNo, userLocation, roles);
 
             List<VWUserHobbies> userHobbies = _locationInterface.GetUserHobbies(userLocation, roles);
 
@@ -39,7 +40,13 @@ namespace PrideLink.Server.Helpers
                         BioDescription = userFromLocation.BioDescription,
                         DisplayName = userFromLocation.DisplayName,
                         Age = userFromLocation.Age,
-                        UserVerified = _userInfoInterface.GetUserVerificationStatus(userFromLocation.UserNo)
+                        UserVerified = userFromLocation.IsUserVerified switch
+                        {
+                            2 => "Verified",
+                            3 => "Unverified",
+                            _ => "Unverified"
+                        },
+                        FriendStatus = userFromLocation.FriendStatus
                     },
                     UserAccountRelashionshipStatus = new UserAccountRelashionshipStatus()
                     {
