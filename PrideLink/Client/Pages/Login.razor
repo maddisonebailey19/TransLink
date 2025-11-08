@@ -131,22 +131,7 @@
             var response = await _Http.GetAsync("api/Login/Login-Checker" + urlString);
             if (response.IsSuccessStatusCode)
             {
-                // jwtToken result = await response.Content.ReadFromJsonAsync<jwtToken>();
-                // _JS.InvokeVoidAsync("localStorage.setItem", "Token", JsonSerializer.Serialize(result));
-
-                var userNoResponse = await _Http.GetAsync("api/Login/GetUserID");
-
-                if (userNoResponse.IsSuccessStatusCode)
-                {
-                    string userNo = await userNoResponse.Content.ReadAsStringAsync();
-                    _loginStatus.userNo = userNo;
-                    _loginStatus.NotifyStateChanged();
-                    await _notificationService.InitializeAsync(userNo, _Navigation);
-                }
-
                 _Navigation.NavigateTo("/");
-
-
             }
             else
             {

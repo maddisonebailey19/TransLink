@@ -4,6 +4,7 @@
 @using System.Net.Http.Headers
 @using Microsoft.AspNetCore.SignalR.Client;
 @inject IJSRuntime JSRuntime
+@inject NotificationService _notificationService
 @inject HttpClient _Http
 @inject jwtHelper _jwt_helper
 @inject LoginStatus _loginStatus
@@ -43,30 +44,15 @@
 
     protected override async Task OnInitializedAsync()
     {
-        // Build the connection
-        hubConnection = new HubConnectionBuilder()
-            .WithUrl(Nav.ToAbsoluteUri("/notificationhub"))
-            .Build();
+        var userNoResponse = await _Http.GetAsync("api/Login/GetUserID");
 
-        // Handle messages from the server
-        hubConnection.On<string>("ReceiveNotification", (message) =>
+        if (userNoResponse.IsSuccessStatusCode)
         {
-            // TODO: Replace this with a popup, toast, or UI update
-            Console.WriteLine($"Notification: {message}");
-        });
-
-        try
-        {
-            await hubConnection.StartAsync();
-            Console.WriteLine("Connected to Notification Hub!");
+            string userNo = await userNoResponse.Content.ReadAsStringAsync();
+            _loginStatus.userNo = userNo;
+            _loginStatus.NotifyStateChanged();
+            await _notificationService.InitializeAsync(userNo, Nav);
         }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Failed to connect to SignalR hub: {ex.Message}");
-        }
-
-        _loginStatus.OnChange += async () => await RefreshVerificationStatus();
-        await RefreshVerificationStatus();
     }
 
     public async ValueTask DisposeAsync()

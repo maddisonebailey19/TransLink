@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using PrideLink.Server.Helpers;
+using PrideLink.Server.Hubs;
 using PrideLink.Server.Interfaces;
 using PrideLink.Shared.FreindFinderDetails;
 using PrideLink.Shared.General;
@@ -16,18 +18,20 @@ namespace PrideLink.Server.Controllers
     {
         private readonly IFriendInterface _friendInterface;
         private readonly IGmailInterface _gmailInterface;
+        private readonly IHubContext<NotificationHub> _hubContext;
         private readonly JWTHelper _jWTHelper;
-        public FriendController(IFriendInterface generalInterface, JWTHelper jWTHelper, IGmailInterface gmailInterface)
+        public FriendController(IFriendInterface generalInterface, JWTHelper jWTHelper, IGmailInterface gmailInterface, IHubContext<NotificationHub> hubContext)
         {
             _friendInterface = generalInterface;
             _jWTHelper = jWTHelper;
             _gmailInterface = gmailInterface;
+            _hubContext = hubContext;
         }
 
         [HttpPost]
         [Authorize(Roles = "Admin,General")]
         [Route("AddFriend")]
-        public IActionResult AddFriend(int friendUserNo)
+        public async Task<IActionResult> AddFriend(int friendUserNo)
         {
             var jwtToken = Request.Cookies["AuthToken"];
 
@@ -37,6 +41,9 @@ namespace PrideLink.Server.Controllers
             if(emailContent != null)
             {
                 _gmailInterface.SendEmail(emailContent);
+                Dictionary<int, string> message = new Dictionary<int, string>();
+                message.Add(userNo, "You have a new friend request!");
+                await _hubContext.Clients.User(friendUserNo.ToString()).SendAsync("FriendStatus", message);
                 return Ok();
             }
             else
@@ -50,8 +57,12 @@ namespace PrideLink.Server.Controllers
         [HttpPatch]
         [Authorize(Roles = "Admin,General")]
         [Route("RemoveFriend")]
-        public IActionResult RemoveFriend(int userNo, int friendUserNo)
+        public IActionResult RemoveFriend(int friendUserNo)
         {
+            var jwtToken = Request.Cookies["AuthToken"];
+
+            int userNo = int.Parse(_jWTHelper.GetUserNo(jwtToken));
+
             var response = _friendInterface.RemoveFriend(userNo, friendUserNo);
             return Ok(response);
         }
@@ -59,14 +70,25 @@ namespace PrideLink.Server.Controllers
         [HttpPatch]
         [Authorize(Roles = "Admin,General")]
         [Route("AcceptFriendRequest")]
-        public IActionResult AcceptFriendRequest(int friendUserNo)
+        public async Task<IActionResult> AcceptFriendRequest(int friendUserNo)
         {
             var jwtToken = Request.Cookies["AuthToken"];
 
             int userNo = int.Parse(_jWTHelper.GetUserNo(jwtToken));
 
-            var response = _friendInterface.AcceptFriendRequest(userNo, friendUserNo);
-            return Ok(response);
+            NotificationContent emailContent = _friendInterface.AcceptFriendRequest(userNo, friendUserNo);
+            if (emailContent != null)
+            {
+                _gmailInterface.SendEmail(emailContent);
+                Dictionary<int,string> message = new Dictionary<int,string>();
+                message.Add(userNo, emailContent.EmailContents.FirstOrDefault(e => e.Key == "@newFriendUserName").Value + " has accepted your friend request!");
+                await _hubContext.Clients.User(friendUserNo.ToString()).SendAsync("FriendStatus",message);
+                return Ok();
+            }
+            else
+            {
+                return BadRequest();
+            }
         }
 
         [HttpPatch]

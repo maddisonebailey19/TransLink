@@ -19,4 +19,5 @@ builder.Services.AddScoped<NotificationStatus>();
 builder.Services.AddScoped<NotificationService>();
 builder.Services.AddScoped<jwtHelper>();
 builder.Services.AddSingleton<LoginStatus>();
+builder.Services.AddSingleton<FriendStatus>();
 await builder.Build().RunAsync();

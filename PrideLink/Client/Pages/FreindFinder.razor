@@ -8,7 +8,7 @@
 @inject IJSRuntime JSRuntime
 @inject HttpClient _Http
 @inject jwtHelper _jwt_helper
-
+@inject FriendStatus _friendStatus
 <style>
     .scrollable-images-container {
         display: flex;
@@ -94,7 +94,13 @@ else
         {
             @foreach (var finderAccount in userFreindFinderAccounts)
             {
-                <div class="card mb-4 shadow-sm border-0 rounded-4">
+                <ProfileCard FinderAccount="finderAccount"
+                             pageName="FreindFinder"
+                             UserAllowedToVerify="userAllowedToVerify"
+                             OnUnfriendClicked="UnFriend"
+                             OnShowVerifyPopupClicked="ShowVerifyPopup"
+                             OnAddFriendClicked="AddFriend" />
+                @* <div class="card mb-4 shadow-sm border-0 rounded-4">
                     <!-- Header -->
                     <div class="card-header bg-light d-flex justify-content-between align-items-center rounded-top-4">
                         <h3 class="mb-0">@finderAccount.UserAccountGeneralInfo.DisplayName</h3>
@@ -157,60 +163,6 @@ else
                             <p class="mb-0">@finderAccount.UserAccountGeneralInfo.BioDescription</p>
                         </div>
                     </div>
-                    <!-- Test -->
-                    @* <ul class="nav nav-tabs" role="tablist">
-                        <li class="nav-item" role="presentation">
-                            <a class="nav-link" data-bs-toggle="tab" href="#Hobbies" aria-selected="false" role="tab" tabindex="-1">Hobbies</a>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <a class="nav-link active" data-bs-toggle="tab" href="#Socials" aria-selected="true" role="tab">Socials</a>
-                        </li>
-                    </ul>
-                    <div id="myTabContent" class="tab-content">
-                        <div class="tab-pane fade" id="Hobbies" role="tabpanel">
-                            <div class="card-body">
-                                <h4 class="card-title">Light card title</h4>
-                                @foreach (var hobby in finderAccount.UserAccountHobbies)
-                                {
-                                    <button class="btn btn-primary rounded-pill me-2 mt-2" disabled>
-                                        @hobby.HobbyName
-                                    </button>
-                                }
-                            </div>
-                        </div>
-                        <div class="tab-pane fade active show" id="Socials" role="tabpanel">
-                            <div class="card-body">
-                                <h4 class="card-title">Light card title</h4>
-                                @{
-                                    var socials = new Dictionary<string, (string Url, string? Value)>
-                                    {
-                                        ["Instagram"] = ("https://instagram.com/", finderAccount.UserAccountSocials.FirstOrDefault(e => e.socialTypeNo == 1)?.socialValue),
-                                        ["Snapchat"] = ("https://snapchat.com/add/", finderAccount.UserAccountSocials.FirstOrDefault(e => e.socialTypeNo == 2)?.socialValue),
-                                        ["WhatsApp"] = ("https://wa.me/", finderAccount.UserAccountSocials.FirstOrDefault(e => e.socialTypeNo == 3)?.socialValue),
-                                        ["Discord"] = ("https://discordapp.com/users/", finderAccount.UserAccountSocials.FirstOrDefault(e => e.socialTypeNo == 4)?.socialValue)
-                                    };
-                                }
-
-                                @foreach (var social in socials)
-                                {
-                                    <label class="form-label mt-3">@social.Key</label>
-
-                                    @if (!string.IsNullOrWhiteSpace(social.Value.Value))
-                                    {
-                                        <a href="@($"{social.Value.Url}{social.Value.Value}")"
-                                           target="_blank"
-                                           class="form-control text-primary">
-                                            @social.Value.Value
-                                        </a>
-                                    }
-                                    else
-                                    {
-                                        <p class="form-text text-muted">No @social.Key linked</p>
-                                    }
-                                }
-                            </div>
-                        </div>
-                    </div> *@
                     <!-- Accordion -->
                     <div class="accordion" id="accordion_@finderAccount.userNo">
                         <!-- Hobbies -->
@@ -288,7 +240,7 @@ else
                             </div>
                         </div>
                     </div>
-                </div>
+                </div> *@
             }
         }
     }
@@ -330,12 +282,16 @@ else
     {
         Console.WriteLine("Adding friend with userNo: " + userNo);
         var response = await _Http.PostAsync("/api/Friend/AddFriend?friendUserNo=" + userNo,null);
+        userFreindFinderAccounts.FirstOrDefault(e => e.userNo == userNo).UserAccountGeneralInfo.FriendStatus = "Pending";
+        StateHasChanged();
     }
 
     private async Task UnFriend(int userNo)
     {
         Console.WriteLine("Unfriend: " + userNo);
-        // var response = await _Http.PatchAsync("/api/Friend/AcceptFriendRequest?friendUserNo=" + userNo, null);
+        userFreindFinderAccounts.FirstOrDefault(e => e.userNo == userNo).UserAccountGeneralInfo.FriendStatus = "NotFriends";
+        var response = await _Http.PatchAsync("/api/Friend/RemoveFriend?friendUserNo=" + userNo, null);
+        StateHasChanged();
     }
 
     private async Task ShowVerifyPopup(int userNo)
@@ -364,6 +320,7 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        _friendStatus.OnChange += async () => await RefreshFriendStatus();
         // Log component start
         await JSRuntime.InvokeVoidAsync("console.log", "FreindFinder.OnInitializedAsync starting");
 
@@ -406,6 +363,14 @@ else
             isLoading = false;
         }
 
+    }
+
+    private async Task RefreshFriendStatus()
+    {
+        Console.WriteLine("Updating friend status for userNo: "+_friendStatus.userNo);
+        userFreindFinderAccounts.FirstOrDefault(e => e.userNo == _friendStatus.userNo).UserAccountGeneralInfo.FriendStatus = "Accepted";
+        StateHasChanged();
+        Console.WriteLine("Completed");
     }
 
     private async Task UserAllowedToVerify()

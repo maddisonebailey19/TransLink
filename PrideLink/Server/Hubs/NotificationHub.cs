@@ -7,7 +7,7 @@ namespace PrideLink.Server.Hubs
     {
         public async Task SendNotification(string userId, string message)
         {
-            await Clients.User(userId).SendAsync("ReceiveNotification", message);
+            await Clients.User(userId).SendAsync("UserVerified", message);
         }
     }
 }

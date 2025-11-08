@@ -18,16 +18,16 @@ namespace PrideLink.Server.Helpers
             _locationInterface = locationInterface;
             _userInfoInterface = userInfoInterface;
         }
-        public bool AcceptFriendRequest(int userNo, int friendUserNo)
+        public NotificationContent? AcceptFriendRequest(int userNo, int friendUserNo)
         {
-            using(var context = new MasContext())
+            using (var context = new MasContext())
             {
                 try
                 {
                     TblFriendMappingTable friendRequest = context.TblFriendMappingTables.FirstOrDefault(e => e.UserNo == userNo && e.FriendUserNo == friendUserNo);
                     if (friendRequest == null)
                     {
-                        return false;
+                        return null;
                     }
                     friendRequest.FriendStatusNo = 1;
                     context.SaveChanges();
@@ -37,24 +37,24 @@ namespace PrideLink.Server.Helpers
                     {
                         newFriendRequest.FriendStatusNo = 1;
                         context.SaveChanges();
-                        return true;
+                        return FriendRequestAcceptedEmail(userNo, friendUserNo);
                     }
                     else
                     {
-                        return false;
+                        return null;
                     }
 
                 }
                 catch (Exception ex)
                 {
-                    return false;
+                    return null;
                 }
 
             }
         }
         public NotificationContent? AddFriend(int userNo, int friendUserNo)
         {
-            using(var context = new MasContext())
+            using (var context = new MasContext())
             {
                 try
                 {
@@ -70,7 +70,7 @@ namespace PrideLink.Server.Helpers
                     }
                     else
                     {
-                        if(userFriendRequest.Active == false)
+                        if (userFriendRequest.Active == false)
                         {
                             userFriendRequest.Active = true;
                             userFriendRequest.FriendStatusNo = 2;
@@ -102,7 +102,7 @@ namespace PrideLink.Server.Helpers
                 {
                     return null;
                 }
-                
+
             }
         }
         public bool BlockUser(int userNo, int blockedUserNo)
@@ -112,9 +112,9 @@ namespace PrideLink.Server.Helpers
                 using (var context = new MasContext())
                 {
                     TblFriendMappingTable friend = context.TblFriendMappingTables.FirstOrDefault(e => e.UserNo == userNo && e.FriendUserNo == blockedUserNo);
-                    if(friend != null)
+                    if (friend != null)
                     {
-                        friend.FriendStatusNo = 3; 
+                        friend.FriendStatusNo = 3;
                         context.SaveChanges();
                     }
                     else
@@ -140,12 +140,12 @@ namespace PrideLink.Server.Helpers
         {
             try
             {
-                using(var context = new MasContext())
+                using (var context = new MasContext())
                 {
                     TblFriendMappingTable friendRequest = context.TblFriendMappingTables.FirstOrDefault(e => e.UserNo == friendUserNo && e.FriendUserNo == userNo);
                     if (friendRequest != null)
                     {
-                        friendRequest.FriendStatusNo = 3; 
+                        friendRequest.FriendStatusNo = 3;
                         context.SaveChanges();
                     }
                 }
@@ -283,6 +283,24 @@ namespace PrideLink.Server.Helpers
                 emailContent.EmailContents.Add("@toUserName", toUser.Login);
                 emailContent.EmailContents.Add("@newFriendUserName", newFriendDisplayName.Ref2);
 
+                return emailContent;
+            }
+        }
+        private NotificationContent FriendRequestAcceptedEmail(int userNo, int friendUserNo)
+        {
+            using (var context = new MasContext())
+            {
+                TblUser toUser = context.TblUsers.FirstOrDefault(e => e.UserNo == friendUserNo);
+                TblGeneralConfiguration acceptedFriendDisplayName = context.TblGeneralConfigurations.FirstOrDefault(e => e.UserNo == userNo && e.TypeNo == 3);
+                NotificationContent emailContent = new NotificationContent()
+                {
+                    ToEmail = toUser.Email,
+                    EmailContentNo = 4,
+                    Subject = "Your friend request has been accepted on TransLink! 💜",
+                    EmailContents = new Dictionary<string, string>()
+                };
+                emailContent.EmailContents.Add("@toUserName", toUser.Login);
+                emailContent.EmailContents.Add("@newFriendUserName", acceptedFriendDisplayName.Ref2);
                 return emailContent;
             }
         }

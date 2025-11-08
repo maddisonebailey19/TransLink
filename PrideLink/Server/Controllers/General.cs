@@ -59,7 +59,7 @@ namespace PrideLink.Server.Controllers
             _generalInterface.UpdateVerificationStatus(userNo, userTypeName);
 
             var message = "Your account has been verified!";//🎉
-            await _hubContext.Clients.User(userNo.ToString()).SendAsync("ReceiveNotification", message);
+            await _hubContext.Clients.User(userNo.ToString()).SendAsync("UserVerified", message);
             
             return Ok();
         }
